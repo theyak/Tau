@@ -1,0 +1,277 @@
+<?php
+/**
+ * Database Module For TAU
+ *
+ * This is not even close to complete. It's designed to be a new version of TauDatabase
+ *
+ * @Author          levans
+ * @Copyright       2011
+ * @Project Page    None!
+ * @Dependencies    TauError
+ * @Documentation   None!
+ */
+
+if (!defined('TAU'))
+{
+	exit;
+}
+
+class TauMysql extends TauDb
+{
+	function __construct($server)
+	{
+		$this->server = $server;
+
+		if (empty($server->host))
+		{
+			$this->server->host = '127.0.0.1';
+		}
+
+		if (empty($server->port))
+		{
+			$this->server->port = 3306;
+		}
+	}
+
+	function dbConnect()
+	{
+		if (!$this->server->connection)
+		{
+			$this->server->connection = mysql_connect(
+				$this->server->host . ':' . $this->server->port,
+				$this->server->username,
+				$this->server->password,
+				true
+			);
+
+			if (!$this->server->connection)
+			{
+				if ($this->server->host != '127.0.0.1' && $this->server->host != 'localhost')
+				{
+					$message = array(
+						'Unable to connect to database. The database server is either down ',
+						'or an invalid username and password combination was supplied.<br><br>',
+						'You will need to grant access to the database for user ' . $dbuser,
+						' with something like:<br><br>',
+						'&nbsp;&nbsp;&nbsp;&nbsp;GRANT ALL ON ' . $dbname . '.* TO ' . $dbuser,
+						'@\'%\' IDENTIFIED BY \'PASSWORD\'',
+						'<br><br>Please see <a href="http://www.cyberciti.biz/tips/',
+						'how-do-i-enable-remote-access-to-mysql-database-server.html">',
+						'How Do I Enable Remote Access To MySQL Database Server?</a> ',
+						'for more information.',
+					);
+					TauError::fatal(implode('', $message));
+				}
+				else
+				{
+					TauError::fatal('Unable to connect to database.');
+				}
+			}
+			$this->dbUseDatabase($this->server->database);
+		}
+
+		return $this->server->connection;
+	}
+
+
+
+	/**
+	 * Use a particular database
+	 * @param string $database
+	 */
+	public function dbUseDatabase($database)
+	{
+		if (!@mysql_select_db($database))
+		{
+			TauError::fatal('Invalid database');
+		}
+	}
+
+
+
+	/**
+	 * Close connection to database
+	 */
+	public function dbClose()
+	{
+		if ($this->server->connection)
+		{
+			mysql_close($this->server->connection);
+			$this->server->connection = false;
+		}
+	}
+
+
+
+	/**
+	 * Make a query to the database server
+	 * @param string $sql
+	 * @return handle
+	 */
+	public function dbQuery($sql)
+	{
+		return @mysql_query($sql, $this->server->connection);
+	}
+
+
+
+	/**
+	 * Release a result set from memory
+	 * @param handle $resultSet
+	 */
+	public function dbFreeResult($resultSet = null)
+	{
+		if ($resultSet == null)
+		{
+			if ($this->resultSet != null)
+			{
+				mysql_free_result($this->resultSet);
+				$this->resultSet = null;
+			}
+		}
+		else
+		{
+			mysql_free_result($resultSet);
+		}
+	}
+
+
+
+	public function dbError()
+	{
+		return mysql_error();
+	}
+
+
+	/**
+	 * Convert a PHP string into an SQL field name
+	 *
+	 * @param string $unescaped_string
+	 * @return string
+	 */
+	public function dbFieldName($unescaped_string)
+	{
+		return "`" . mysql_real_escape_string($unescaped_string) . "`";
+	}
+
+
+	/**
+	 * Convert a PHP string value to a string value suitable for insertion in to SQL query.
+	 *
+	 * @param string $unescaped_string
+	 * @return string
+	 */
+	public function dbStringify($unescaped_string)
+	{
+		return "'" . mysql_real_escape_string($unescaped_string) . "'";
+	}
+
+
+
+	/**
+	 * Escape a string for insertion in to database
+	 *
+	 * @param type $unescaped_string
+	 * @return string
+	 */
+	public function dbEscape($unescaped_string)
+	{
+		return mysql_real_escape_string($unescaped_string);
+	}
+
+
+
+	/**
+	 * Fetch a row from the database
+	 * @param handle $resultSet
+	 * @return assoc|false
+	 */
+	protected function dbFetch($resultSet)
+	{
+		return @mysql_fetch_assoc($resultSet);
+	}
+
+
+
+	/**
+	 * Fetch alss rows from the database
+	 * @param handle $resultSet
+	 * @return assoc
+	 */
+	protected function dbFetchAll($resultSet)
+	{
+		$rows = array();
+		while ($row = mysql_fetch_assoc($resultSet))
+		{
+			$rows[] = $row;
+		}
+		return $rows;
+	}
+
+
+
+	/**
+	 * Get the ID from the last insert
+	 * @return vararr
+	 */
+	public function dbInsertId()
+	{
+		return @mysql_insert_id();
+	}
+
+
+
+	/**
+	 * Get number of rows affected by last INSERT or UPDATE
+	 * @return int
+	 */
+	public function dbAffectedRows()
+	{
+		return @mysql_affected_rows();
+	}
+
+
+
+	/**
+	 * Determine if table exists in database
+	 * @param string $table
+	 * @param string $dbName
+	 * @return bool
+	 */
+	public function dbIsTable($table, $dbName)
+	{
+		$sql = 'SELECT table_name
+			FROM information_schema.tables
+			WHERE `table_schema` = ' . $this->dbStringify($dbName) . '
+				AND table_name = ' . $this->dbStringify($table);
+		$resultSet = $this->select($sql);
+		if ($row = $this->fetch($resultSet))
+		{
+			$this->freeResult($resultSet);
+			return true;
+		}
+		return false;
+	}
+
+
+
+	/**
+	 * Determine if field exists in table
+	 * @param string $field
+	 * @param string $table
+	 * @param string $dbname
+	 * @return bool
+	 */
+	public function dbIsField($field, $table, $dbName)
+	{
+		$sql = 'SHOW COLUMNS FROM ' . $this->dbFieldName($dbName) . '.' . $this->dbFieldName($table) . '
+			WHERE `field` = ' . $this->dbStringify($field);
+		$resultSet = $this->select($sql);
+		if ($row = $this->fetch($resultSet))
+		{
+			$this->freeResult($resultSet);
+			return true;
+		}
+		return false;
+	}
+}
