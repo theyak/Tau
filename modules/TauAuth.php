@@ -27,10 +27,10 @@ class TauAuth
 	public static function getUserIp()
 	{
 		$ips = (!empty($_SERVER['REMOTE_ADDR'])) ? (string) $_SERVER['REMOTE_ADDR'] : '';
-		$ips = preg_replace('# {2,}#', ' ', str_replace(',', ' ', $this->ip));
+		$ips = preg_replace('# {2,}#', ' ', str_replace(',', ' ', $ips));
 
 		// split the list of IPs
-		$ips = explode(' ', trim($this->ip));
+		$ips = explode(' ', trim($ips));
 
 		// Default IP in case no valid IPs from REMOTE_ADDR
 		$ip = '127.0.0.1';

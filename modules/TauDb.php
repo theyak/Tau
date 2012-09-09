@@ -245,6 +245,7 @@ class TauDb
 	 */
 	public function stringify($string)
 	{
+        $this->dbConnect();
 		return $this->dbStringify($string);
 	}
 
@@ -258,6 +259,7 @@ class TauDb
 	 */
 	public function fieldName($fieldName)
 	{
+        $this->dbConnect();
 		return $this->dbFieldName($fieldName);
 	}
 

@@ -96,7 +96,7 @@ class TauMysql extends TauDb
 	{
 		if ($this->server->connection)
 		{
-			mysql_close($this->server->connection);
+			@mysql_close($this->server->connection);
 			$this->server->connection = false;
 		}
 	}
@@ -125,13 +125,13 @@ class TauMysql extends TauDb
 		{
 			if ($this->resultSet != null)
 			{
-				mysql_free_result($this->resultSet);
+				@mysql_free_result($this->resultSet);
 				$this->resultSet = null;
 			}
 		}
 		else
 		{
-			mysql_free_result($resultSet);
+			@mysql_free_result($resultSet);
 		}
 	}
 
@@ -139,7 +139,7 @@ class TauMysql extends TauDb
 
 	public function dbError()
 	{
-		return mysql_error();
+		return @mysql_error();
 	}
 
 
@@ -151,7 +151,7 @@ class TauMysql extends TauDb
 	 */
 	public function dbFieldName($unescaped_string)
 	{
-		return "`" . mysql_real_escape_string($unescaped_string) . "`";
+		return "`" . @mysql_real_escape_string($unescaped_string) . "`";
 	}
 
 
@@ -163,7 +163,7 @@ class TauMysql extends TauDb
 	 */
 	public function dbStringify($unescaped_string)
 	{
-		return "'" . mysql_real_escape_string($unescaped_string) . "'";
+		return "'" . @mysql_real_escape_string($unescaped_string) . "'";
 	}
 
 
@@ -176,7 +176,7 @@ class TauMysql extends TauDb
 	 */
 	public function dbEscape($unescaped_string)
 	{
-		return mysql_real_escape_string($unescaped_string);
+		return @mysql_real_escape_string($unescaped_string);
 	}
 
 
@@ -201,7 +201,7 @@ class TauMysql extends TauDb
 	protected function dbFetchAll($resultSet)
 	{
 		$rows = array();
-		while ($row = mysql_fetch_assoc($resultSet))
+		while ($row = @mysql_fetch_assoc($resultSet))
 		{
 			$rows[] = $row;
 		}
