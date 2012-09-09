@@ -18,18 +18,18 @@ class TauImage
 	private $_height = 0;
 	private $_mimetype = '';
 	private $_image = null;
-	
+
 	/**
 	 * Hash computed from averageHash() method.
 	 */
 	private $_hash = 0;
-	
+
 	private $error = '';
-	
+
 	function __construct($filenameOrResourceOrString)
 	{
 		$filename = $filenameOrResourceOrString;
-		
+
 		if (is_resource($filename))
 		{
 			$this->_width = imagesx($filename);
@@ -37,7 +37,7 @@ class TauImage
 			$this->_image = $filename;
 			return;
 		}
-		
+
 		if (empty($filename))
 		{
 			throw new TauImageException(TauImageException::INVALID_FILE);
@@ -51,7 +51,7 @@ class TauImage
 			$this->_height = $size[1];
 			$this->_type = $size[2];
 			$this->_mimetype = $size['mime'];
-			
+
 			switch ($this->_mimetype)
 			{
 				case 'image/jpeg':
@@ -68,11 +68,11 @@ class TauImage
 
 				case 'image/x-windows-bmp':
 					$this->_image = imagecreatefromwbmp($filename);
-				break;		
+				break;
 
 				default:
-					throw new TauImageException(TauImageException::INVALID_FILETYPE);				
-			}			
+					throw new TauImageException(TauImageException::INVALID_FILETYPE);
+			}
 		}
 		else
 		{
@@ -84,7 +84,7 @@ class TauImage
 				$this->_height = imagesy($this->_image);
 				$this->_mimetype = self::getMimeTypeFromString($filename);
 				if (!in_array($this->_mimetype, array('image/jpeg', 'image/gif', 'image/png', 'image/x-windows-bmp'))) {
-					throw new TauImageException(TauImageException::INVALID_FILETYPE);					
+					throw new TauImageException(TauImageException::INVALID_FILETYPE);
 				}
 			}
 			else
@@ -93,13 +93,13 @@ class TauImage
 			}
 		}
 	}
-	
+
 	/**
 	 * Scale an image to a new size. Like resize, except this affects the current object
 	 * instead of returning a new TauImage.
-	 * 
+	 *
 	 * @param type $width
-	 * @param type $height 
+	 * @param type $height
 	 */
 	public function setSize($width, $height)
 	{
@@ -122,7 +122,7 @@ class TauImage
 		$this->_width = $width;
 		$this->_height = $height;
 	}
-	
+
 	/**
 	 * Proportionally scales an image to a specified height
 	 * @param type $height The height to scale image to
@@ -132,7 +132,7 @@ class TauImage
 		$width = $height * $this->getWidth() / $this->getHeight();
 		$this->setSize($width, $height);
 	}
-	
+
 	/**
 	 * Proportionally scales an image to a specified height
 	 * @param type $height The height to scale image to
@@ -143,7 +143,7 @@ class TauImage
 		$this->setSize($width, $height);
 	}
 
-	
+
 	/**
 	 * Scale an image to a new size
 	 * @param type $width
@@ -168,7 +168,7 @@ class TauImage
 
 		return new TauImage($destination);
 	}
-	
+
 	public function square($size)
 	{
 		$src_w = $this->_width;
@@ -186,43 +186,47 @@ class TauImage
 
 		$destination = @imagecreatetruecolor($size, $size);
 		@imagecopyresampled($destination, $this->_image, 0, 0, $src_x, $src_y, $size, $size, $src_w, $src_h);
-		
+
 		return new TauImage($destination);
 	}
-	
+
 	/**
 	 * Generates an HTML image tag with base 64 encoded data. Only works for modern browsers.
-	 * @return string 
+	 * @return string
 	 */
 	public function toHtml()
 	{
 		ob_start();
 		imagejpeg($this->getImageResource());
-		$data = ob_get_clean();		
+		$data = ob_get_clean();
 
 		$html = '<img src="data:image/jpeg;base64,' . base64_encode($data) . '">';
 		return $html;
 	}
-	
+
 	/**
 	 * An extremely simple and relatively quick perceptual hash algorithm as described on
 	 * http://www.hackerfactor.com/blog/index.php?/archives/432-Looks-Like-It.html.
 	 * If you want to build a better one, such as one with discrete cosine transform, please
 	 * do and contribute it! This one uses 8 bit true-grayscale images as opposed to 6-bit
 	 * pseudo-greyscale images as described on hackerfactor.
-	 * 
-	 * @return type 
+	 *
+	 * @return type
 	 */
 	function averageHash($size = 8)
 	{
-		$greyscaleImage = array();
+		if ($size % 4 !== 0)
+		{
+			$size = ceil($size / 4) * 4;
+		}
+
+		$greyScaleImage = array();
 		$averageValue = $finalHash = 0;
 		$pixels = $size * $size;
 
 
-		// Squeeze image down to 16x16
+		// Squeeze image down to $size x $size
 		$smallImage = imagecreatetruecolor($size, $size);  //  resample
-		// $greyImage = imagecreatetruecolor($size, $size);  //  resample
 		imagecopyresampled($smallImage, $this->_image, 0, 0, 0, 0, $size, $size, $this->_width, $this->_height);
 
 		// Convert to greyscale
@@ -245,10 +249,9 @@ class TauImage
 				// imagecolordeallocate($greyImage, $val);
 			}
 		}
-	
+
 		// Destroy the small image resources.
 		imagedestroy($smallImage);
-		// imagedestroy($greyImage);
 
 		// Find average value of pixels.
 		$averageValue /= $pixels;
@@ -284,22 +287,22 @@ class TauImage
 	{
 		return $this->_height;
 	}
-	
+
 	public function getWidth()
 	{
 		return $this->_width;
 	}
-	
-	public function getImageResource() 
+
+	public function getImageResource()
 	{
-		return $this->_image;		
+		return $this->_image;
 	}
-	
+
 	public function destroy()
 	{
 		imagedestroy($this->_image);
 	}
-	
+
 	public function jpeg($file, $quality = 80)
 	{
 		if (!is_dir(dirname($file))) {
@@ -387,14 +390,14 @@ class TauImage
 		exit;
 	}
 
-	
+
 }
 
 class TauImageException extends Exception
 {
 	const INVALID_FILE = -1;
 	const INVALID_FILETYPE = -2;
-	
+
 	function __constuct($code)
 	{
 		parent::__construct("", $code);
