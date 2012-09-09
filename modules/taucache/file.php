@@ -2,7 +2,7 @@
 /**
  * File driver for TAU Cache module
  *
- * @Author          levans
+ * @Author          theyak
  * @Copyright       2011
  * @Project Page    None!
  * @Dependencies    TauError

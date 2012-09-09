@@ -4,7 +4,7 @@
  * Makes curl more user friendly. Requires curl to run. Tried to do this without curl,
  * but it kept failing during the feof/fread loop for binary files.
  *
- * @Author          levans
+ * @Author          theyak
  * @Copyright       2011
  * @Depends on      curl
  * @Project Page    None!

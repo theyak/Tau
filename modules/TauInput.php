@@ -2,7 +2,7 @@
 /**
  * Input Module For TAU
  *
- * @Author          levans
+ * @Author          theyak
  * @Copyright       2011
  * @Project Page    None!
  * @docs            None!

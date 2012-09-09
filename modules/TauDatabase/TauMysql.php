@@ -1,14 +1,15 @@
 <?php
 /**
- * Database Module For TAU
+ * MySQL Database Module For TAU
  *
- * This is not even close to complete. It's designed to be a new version of TauDatabase
- *
- * @Author          levans
+ * @Author          theyak
  * @Copyright       2011
  * @Project Page    None!
  * @Dependencies    TauError
  * @Documentation   None!
+ *
+ * changelog:
+ *   1.0.0  Sep  8, 20122  Created
  */
 
 if (!defined('TAU'))

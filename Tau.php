@@ -1,4 +1,17 @@
 <?php
+/**
+ * The main Tau module.
+ *
+ * Just include it and go.
+ *
+ * @Author          theyak
+ * @Copyright       2012
+ * @Project Page    None!
+ * @Dependencies    TauError, TauFS
+ * @Documentation   None!
+ *
+ */
+
 if (!defined('TAU'))
 {
 	define('TAU', true);

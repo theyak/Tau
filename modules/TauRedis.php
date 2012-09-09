@@ -18,7 +18,7 @@
  *
  * Full list of commands you can see on http://redis.io/commands
  *
- * @Author          levans
+ * @Author          theyak
  * @Original        ptrofimov on GitHub
  * @Copyright       2012
  * @Depends on      None!

@@ -2,7 +2,7 @@
 /**
  * Tumblr.com module for TAU
  *
- * @Author          levans
+ * @Author          theyak
  * @Copyright       2011
  * @Depends on      TauHttp, curl
  * @Project Page    None!

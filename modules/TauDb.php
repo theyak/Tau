@@ -4,12 +4,117 @@
  *
  * This is a replacement for TauDatabase. It's not quite as functional - yet
  *
- * @Author          levans
+ * @Author          theyak
  * @Copyright       2012
  * @Project Page    None!
  * @Dependencies    TauError, TauFS
  * @Documentation   None!
- * @
+ *
+ * @example
+ *
+ * $server = new TauDbServer();
+ * $server->username = 'dbuser';
+ * $server->password = 'somepassword';
+ * $server->database = 'databasetousebydefault';
+ * $server->host = '127.0.0.1'; // Optional, defaults to 127.0.0.1
+ * $server->port = 3306; // Optional, defaults the DB's default port
+ * $db = TauDB::init('mysql', $server);
+ *
+ * $db->insert('table', array('field1' => 'value1', 'field2' => 'value2');
+ * $db->update('table', array('field1' => 'newValue'), array('field1' => 'value1'));
+ * Tau::dump($db->fetchAll('SELECT * FROM table'));
+ *
+ * changelog:
+ *   1.0.0  Sep  8, 20122  Created
+ *
+ * ::init($engine, TauDbServer $server)
+ *   Initialize a database connection
+ *
+ * setCache(TauCache $cache)
+ *   Set the cache to use for SELECT statements
+ *
+ * nullValue()
+ *   Return SQL for NULL value
+ *
+ * now()
+ *   Return SQL for current time
+ *
+ * emptyValue()
+ *   Return SQL for an empty string or value
+ *
+ * stringify($string)
+ *   Encode a string into an SQL string, including proper escaping and
+ *   quotations.
+ *
+ * fieldName($fieldName)
+ *   Return a field name in SQL format
+
+ * insertSql($table, $insert)
+ *   Create SQL for an INSERT statement
+ *
+ * updateSql($table, $update, $where)
+ *   Create SQL for an UPDATE statement
+ *
+ * inSetSql($field, $set, $negate)
+ *   Create SQL for IN SET
+ *
+ * escape($value)
+ *   Convert PHP datatypes to those appropriate for SQL statements
+ *
+ * select($sql, $ttl = 0)
+ *   Perform a SELECT query on the database, including cache if supplied
+ *
+ * query($sql, $ttl = 0)
+ *   Perform an SQL query (anything other than SELECT) on the database
+ *
+ * fetch($resultSet = null)
+ *   Fetch a row from a result set
+ *
+ * fetchOne($sql, $ttl = 0)
+ *   Retrieve exactly one row from SQL query
+ *
+ * fetchAll($sql, $ttl = 0)
+ *   Retrieve all rows from an SQL quere
+ *
+ * fetchPairs($sql, $ttl = 0)
+ *   Fetch pairs from the database. First value in result set is used as array key
+ *
+ * fetchColumn($sql, $ttl = 0)
+ *   Fetch a column from a database SELECT query
+ *
+ * fetchValue($sql, $ttl = 0)
+ *   Fetch a single value from the database. Very useful for things like
+ *   SELECT COUNT(*) FROM ... WHERE ...
+ *
+ * insert($table, $values)
+ *   Insert data in to a table
+ *
+ * update($table, $values, $where)
+ *   Update data in a table
+ *
+ * inSet($field, $set, $negate = false)
+ *   Retrieve SQL for finding data in a set
+ *
+ * insertId()
+ *   Get the ID from the last insert
+ *
+ * affectedRows()
+ *   Get number of rows affected by last INSERT or UPDATE
+ *
+ * where($where)
+ *   Create a WHERE string for SQL statement. If an array is passed in, the WHERE
+ *   is constructed based on the key and value pairs of the array and ANDed together.
+ *   If a string is passed in, it is just returned, possibly with WHERE prepended
+ *   if needed.
+ *
+ * isTable($table, $dbName = null)
+ *   Determine if table exists in database
+ *
+ * isField($field, $table, $dbName = null)
+ *   Determine if field exists in table
+ *
+ * freeResult($resultSet)
+ *   Release result set from memory
  */
 
 if (!defined('TAU'))
@@ -57,10 +162,11 @@ class TauDb
 
 
 	/**
+	 * Initializes a database connection
 	 *
 	 * @param string $engine
 	 * @param TauDbServer $server
-	 * @return \engine
+	 * @return $engine
 	 */
 
 	public static function init( $engine, TauDbServer $server )
@@ -98,11 +204,6 @@ class TauDb
 	public function __construct(TauDbServer $server)
 	{
 		$this->server = $server;
-	}
-
-	public function setCache(TauCache $cache)
-	{
-		$this->cache = $cache;
 	}
 
 	/**
@@ -204,7 +305,20 @@ class TauDb
 
 
 	/**
+	 * Set the cache to use for SELECT statements
+	 *
+	 * @param TauCache $cache
+	 */
+	public function setCache(TauCache $cache)
+	{
+		$this->cache = $cache;
+	}
+
+
+
+	/**
 	 * Return SQL for NULL value
+	 *
 	 * @return string
 	 */
 	public function nullValue()
@@ -216,6 +330,7 @@ class TauDb
 
 	/**
 	 * Return SQL for current time
+	 *
 	 * @return string
 	 */
 	public function now()
@@ -227,6 +342,7 @@ class TauDb
 
 	/**
 	 * Return SQL for an empty string or value
+	 *
 	 * @return string
 	 */
 	public function emptyValue()
@@ -569,7 +685,7 @@ class TauDb
 
 
 	/**
-	 * Fetch a column from the database
+	 * Fetch a column from a database SELECT query
 	 *
 	 * @param String $sql
 	 * @param int $ttl
@@ -599,7 +715,8 @@ class TauDb
 
 
 	/**
-	 * Fetch a single value from the database
+	 * Fetch a single value from the database. Very useful for things like
+	 * SELECT COUNT(*) FROM ... WHERE ...
 	 *
 	 * @param string $sql
 	 * @param int $ttl
@@ -633,7 +750,6 @@ class TauDb
 
 
 	/**
-	 * Update data in a table
 	 *
 	 * @param string $table
 	 * @param array $values

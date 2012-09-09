@@ -2,7 +2,7 @@
 /**
  * Encryption module for TAU
  *
- * @Author          levans
+ * @Author          theyak
  * @Copyright       2011
  * @Based on        http://stackoverflow.com/questions/1289061/best-way-to-use-php-to-encrypt-and-decrypt
  * @Project Page    None!
