@@ -4,7 +4,7 @@
  * Contains helper routines for authorizing users
  *
  * @Author          theyak
- * @Copyright       2011
+ * @Copyright       2012
  * @Project Page    None!
  * @docs            None!
  *
@@ -21,7 +21,7 @@ class TauAuth
 	 * Get IP address of user.
 	 *
 	 * @return string IP address of user
-	 * 
+	 *
 	 * @source phpbb3, http://www.phpbb.com, includes/session.php:session_begin()
 	 */
 	public static function getUserIp()
@@ -63,5 +63,54 @@ class TauAuth
 		}
 
 		return $ip;
+	}
+
+
+
+	/**
+	 * Tries to determine if website caller is a web crawler. There's no
+	 * way to make this 100% as new crawlers come out all the time
+	 * and some fake their user agents.
+	 *
+	 * @return boolean
+	 */
+	public static function isCrawler()
+	{
+		if ( ! isset( $_SERVER['HTTP_USER_AGENT'] ) ||
+			 empty ( $_SERVER['HTTP_USER_AGENT'] ) )
+		{
+			return false;
+		}
+
+
+		$crawlers = array(
+			'googlebot',
+			'yahoo',
+			'slurp',
+			'yammybot',
+			'openbot',
+			'msnbot',
+			'baiduspider',
+			'ia_archiver',
+			'lycos',
+			'scooter',
+			'altavista',
+			'teoma',
+			'gigabot',
+			'yandexBot',
+		);
+
+		// Use instead of stripos which is far slower than strpos
+		$agent = strtolower($_SERVER['HTTP_USER_AGENT']);
+
+		// Loop through each spider and check if it appears in
+		foreach ($crawlers as $crawler)
+		{
+			if (strpos($agent, $crawler))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 }
