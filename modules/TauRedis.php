@@ -41,6 +41,13 @@ class TauRedis
 	}
 
 
+	public function close()
+	{
+		fclose($this->socket);
+		$this->socket = null;
+	}
+
+
 	/**
 	 * Magic method to call Redis commands
 	 * @param <type> $method

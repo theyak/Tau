@@ -201,17 +201,26 @@ class TauDb
 
 
 
-	public function __construct(TauDbServer $server)
+	public function __construct($engine, $user, $pass, $database, $host = '127.0.0.1', $port = 0)
 	{
-		$this->server = $server;
+		$this->server = new TauDbServer($database, $user, $pass, $host, $port);
+		return self::init($engine, $this->server);
 	}
 
 	/**
 	 * @abstract
 	 */
-	public function dbConnect()
+	public function connect()
 	{
-		TauError::fatal('dbConnect() method not defined.');
+		TauError::fatal('connect() method not defined.');
+	}
+
+	/**
+	 * @abstract
+	 */
+	public function close()
+	{
+		TauError::fatal('dbClose() method not defined.');
 	}
 
 	/**
@@ -361,7 +370,7 @@ class TauDb
 	 */
 	public function stringify($string)
 	{
-        $this->dbConnect();
+        $this->connect();
 		return $this->dbStringify($string);
 	}
 
@@ -375,7 +384,7 @@ class TauDb
 	 */
 	public function fieldName($fieldName)
 	{
-        $this->dbConnect();
+        $this->connect();
 		return $this->dbFieldName($fieldName);
 	}
 
@@ -489,7 +498,7 @@ class TauDb
 			'start' => microtime(true),
 		);
 
-		$this->dbConnect();
+		$this->connect();
 
 		if ($this->cache && $ttl > 0)
 		{
@@ -547,7 +556,7 @@ class TauDb
 			'start' => microtime(true),
 		);
 
-		$this->dbConnect();
+		$this->connect();
 		$this->dbQuery($sql);
 
 		$query['end'] = microtime(true);

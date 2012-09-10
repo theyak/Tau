@@ -24,7 +24,7 @@ class TauDbServer
 	public $database;
 	public $connection = false;
 
-	function construct($database, $username, $password, $host = '127.0.0.1', $port = 0)
+	function __construct($database, $username, $password, $host = '127.0.0.1', $port = 0)
 	{
 		$this->database = $database;
 		$this->username = $username;

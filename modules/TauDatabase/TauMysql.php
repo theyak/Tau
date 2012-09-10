@@ -34,7 +34,7 @@ class TauMysql extends TauDb
 		}
 	}
 
-	function dbConnect()
+	function connect()
 	{
 		if (!$this->server->connection)
 		{
@@ -93,7 +93,7 @@ class TauMysql extends TauDb
 	/**
 	 * Close connection to database
 	 */
-	public function dbClose()
+	public function close()
 	{
 		if ($this->server->connection)
 		{
