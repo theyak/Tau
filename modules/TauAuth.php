@@ -86,6 +86,8 @@ class TauAuth
 		$crawlers = array(
 			'googlebot',
 			'yahoo',
+            'bingbot',
+            'adsbot',
 			'slurp',
 			'yammybot',
 			'openbot',
@@ -97,7 +99,8 @@ class TauAuth
 			'altavista',
 			'teoma',
 			'gigabot',
-			'yandexBot',
+			'yandexbot',
+            'sosospider',
 		);
 
 		// Use instead of stripos which is far slower than strpos
