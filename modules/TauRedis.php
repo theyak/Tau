@@ -34,6 +34,18 @@ class TauRedis
 
 	private $server = '127.0.0.1:6379';
 
+	/**
+	 * Flag indicating if in pipeline mode. When in pipeline mode, commands are queued
+	 * up and send in one big write.
+	 * @var bool
+	 */
+	private $pipeline = false;
+
+	/**
+	 * Commands queued for pipelining
+	 * @var array
+	 */
+	private $pipeline_queue = array();
 
 	public function __construct( $server = '127.0.0.1:6379' )
 	{
@@ -45,6 +57,28 @@ class TauRedis
 	{
 		fclose($this->socket);
 		$this->socket = null;
+	}
+
+
+	/**
+	 * Perform an hgetall command
+	 * @param string $key
+	 * @return array
+	 */
+	public function hgetall($key)
+	{		
+		$result = $this->__call('hgetall', array($key));
+
+		if (is_array($result) && sizeof($result) > 1)
+		{
+			for ($i = 0; $i < sizeof($result); $i += 2)
+			{
+				$array[$result[$i]] = $result[$i + 1];
+			}
+			return $array;
+		}
+
+		return $result;
 	}
 
 
@@ -104,8 +138,60 @@ class TauRedis
 		}
 
 		$cmd = '*' . $count . "\r\n" . $cmd;
-		fwrite( $this->socket, $cmd );
-		return $this->parseResponse();
+
+		if ($this->pipeline)
+		{
+			$this->pipeline_queue[] = $cmd;
+		}
+		else
+		{
+			fwrite( $this->socket, $cmd );
+		}
+	}
+
+
+	/**
+	 * Start a pipeline session. When in pipeline mode, all commands are queued up
+	 * and not sent to the server until pipeline_exec() is called
+	 */
+	public function pipeline()
+	{
+		$this->pipeline = true;
+	}
+
+
+
+	/**
+	 * Execute all command in pipeline
+	 * @return array Responses for each command
+	 */
+	public function pipeline_exec()
+	{
+		$count = sizeof( $this->pipeline_queue );
+		foreach ( $this->pipeline_queue AS $command )
+		{
+			fwrite( $this->socket, $command );
+		}
+
+		$response = array();
+		for ( $i = 0; $i < $count; $i++ )
+		{
+			$response[] = $this->parseResponse();
+		}
+
+		$this->pipeline_flush();
+		return $response;
+	}
+
+
+
+	/**
+	 * Clear the pipeline command queue and turn off the pipeline session
+	 */
+	public function pipeline_flush()
+	{
+		$this->pipline_queue = array();
+		$this->pipeline = false;
 	}
 
 
