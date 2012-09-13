@@ -146,6 +146,7 @@ class TauRedis
 		else
 		{
 			fwrite( $this->socket, $cmd );
+			return $this->parseResponse();
 		}
 	}
 
