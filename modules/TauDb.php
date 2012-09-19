@@ -74,7 +74,10 @@
  *   Retrieve exactly one row from SQL query
  *
  * fetchAll($sql, $ttl = 0)
- *   Retrieve all rows from an SQL quere
+ *   Retrieve all rows from an SQL query
+ *
+ * fetchAllWithId($sql, $ttl = 0)
+ *   Retrieve all rows from an SQL query indexed by an ID
  *
  * fetchPairs($sql, $ttl = 0)
  *   Fetch pairs from the database. First value in result set is used as array key
@@ -221,6 +224,30 @@ class TauDb
 	public function close()
 	{
 		TauError::fatal('dbClose() method not defined.');
+	}
+
+	/**
+	 * @abstract
+	 */
+	public function numRows()
+	{
+		TauError::fatal('nowRows() method not defined.');
+	}
+
+	/**
+	 * @abstract
+	 */
+	public function affectedRows()
+	{
+		TauError::fatal('affectedRows() method not defined.');
+	}
+
+	/**
+	 * @abstract
+	 */
+	public function insertId()
+	{
+		TauError::fatal('insertId() method not defined.');
 	}
 
 	/**
@@ -630,7 +657,7 @@ class TauDb
 
 
 	/**
-	 * Retrieve all rows from an SQL quere
+	 * Retrieve all rows from an SQL query
 	 *
 	 * @param string $sql
 	 * @param int $ttl
@@ -654,6 +681,38 @@ class TauDb
 		else
 		{
 			$rows = $this->dbFetchAll($resultSet);
+		}
+		$this->freeResult($resultSet);
+
+		return $rows;
+	}
+
+	/**
+	 * Retrieve all rows from an SQL query indexed by ID
+	 *
+	 * @param string $sql
+	 * @param $id Name of field to use as ID. If left blank, the first field is used.
+	 * @param int $ttl
+	 * @return array
+	 */
+	public function fetchAllWithId($sql, $id = '', $ttl = 0)
+	{
+		if (is_string($sql))
+		{
+			$resultSet = $this->select($sql, $ttl);
+		}
+		else
+		{
+			$resultSet = $sql;
+		}
+
+		if (is_int($resultSet))
+		{
+			$rows = $this->cache->getResultsWithId($resultSet, $id);
+		}
+		else
+		{
+			$rows = $this->dbFetchAllWithId($resultSet, $id);
 		}
 		$this->freeResult($resultSet);
 
@@ -785,29 +844,6 @@ class TauDb
 		return $this->inSetSql($field, $set, $negate);
 	}
 
-
-
-	/**
-	 * Get the ID from the last insert
-	 *
-	 * @return int
-	 */
-	public function insertId()
-	{
-		return $this->dbInsertId();
-	}
-
-
-
-	/**
-	 * Get number of rows affected by last INSERT or UPDATE
-	 *
-	 * @return int
-	 */
-	public function affectedRows()
-	{
-		return $this->dbAffectedRows();
-	}
 
 
 	/**

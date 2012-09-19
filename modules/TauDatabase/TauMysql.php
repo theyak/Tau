@@ -195,7 +195,7 @@ class TauMysql extends TauDb
 
 
 	/**
-	 * Fetch alss rows from the database
+	 * Fetch all rows from the database
 	 * @param handle $resultSet
 	 * @return assoc
 	 */
@@ -212,10 +212,35 @@ class TauMysql extends TauDb
 
 
 	/**
+	 * Fetch all rows from the database storing data in an associative array
+	 *
+	 * @param handle $resultSet
+	 * @param $id Name of field to use as ID. If left blank, the first field is used.
+	 * @return assoc
+	 */
+	protected function dbFetchAllWithId($resultSet, $id = '')
+	{
+		$rows = array();
+		while ($row = @mysql_fetch_assoc($resultSet))
+		{
+			if ($id && isset($row[$id]))
+			{
+				$rows[$row[$id]] = $row;
+			}
+			else
+			{
+				$rows[reset($row)] = $row;
+			}
+		}
+		return $rows;
+	}
+
+
+	/**
 	 * Get the ID from the last insert
 	 * @return vararr
 	 */
-	public function dbInsertId()
+	public function insertId()
 	{
 		return @mysql_insert_id();
 	}
@@ -226,12 +251,23 @@ class TauMysql extends TauDb
 	 * Get number of rows affected by last INSERT or UPDATE
 	 * @return int
 	 */
-	public function dbAffectedRows()
+	public function affectedRows()
 	{
 		return @mysql_affected_rows();
 	}
 
+	
 
+	/**
+	 * Get number of rows returned in last query
+	 * @return int
+	 */
+	public function numRows()
+	{
+		return @mysql_num_rows($this->resultSet);
+	}
+
+	
 
 	/**
 	 * Determine if table exists in database

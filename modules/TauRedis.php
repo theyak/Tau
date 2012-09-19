@@ -10,9 +10,14 @@
  * Based upon TinyRedisClient
  * https://github.com/ptrofimov/tinyredisclient
  *
+ * If connecting to a remote Redis server, make sure you can get through the firewall.
+ * On Redis host machine:
+ * sudo iptables -A INPUT -p tcp -s <ip address of client> --sport 513:65535 \
+ *   --dport 6379 -m state --state NEW,ESTABLISHED -j ACCEPT
+ *
  * Usage example:
  * include 'Tau/Tau.php'; // (or include 'Tau/Tau/modules/TauRedis.php')
- * $client = new TauRedis('server:port'); // Defaults to 127.0.0.1:6379
+ * $client = new TauRedis::init($server, $port, $auth); // Defaults to 127.0.0.1:6379, no PW
  * $client->set( 'key', 'value' );
  * $value = $client->get( 'key' );
  *
@@ -46,6 +51,26 @@ class TauRedis
 	 * @var array
 	 */
 	private $pipeline_queue = array();
+
+
+	/**
+	 * Initialize a connection to a Redis server
+	 * 
+	 * @param string $host Host name or IP address for Redis server
+	 * @param int $port
+	 * @param string $auth
+	 * @return TauRedis
+	 */
+	public static function init($host = '127.0.0.1', $port = 6379, $auth = '')
+	{
+		$redis = new TauRedis($host . ':' . $port);
+		if ($auth)
+		{
+			$redis->auth($auth);
+		}
+		return $redis;
+	}
+
 
 	public function __construct( $server = '127.0.0.1:6379' )
 	{

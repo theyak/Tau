@@ -178,4 +178,25 @@ class TauCache
 		}
 		return false;
 	}
+
+	function getResultsWithId($resultSet, $id = '')
+	{
+		if (isset($this->queries[$resultSet]))
+		{
+			$result = array();
+			foreach ($this->queries[$resultSet] AS $row)
+			{
+				if ($id && isset($row[$id]))
+				{
+					$result[$row[$id]] = $row;
+				}
+				else
+				{
+					$result[reset($row)] = $row;
+				}
+			}
+		}
+		return false;
+	}
+
 }

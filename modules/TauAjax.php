@@ -48,24 +48,44 @@ class TauAjax
 	}
 
 	/**
-	 *  Alert
+	 * Respond to Ajax with a status of Alert
 	 *
-	 *  @param string $message
+	 * @param string $message
+	 * @param $data Optional data to send along with JSON result
 	 */
-	static public function alert($message)
+	static public function alert($message, $data = array())
 	{
-		self::send_json(array('status' =>'Alert', 'msg' => $message));
+		$result = array(
+			'status' => 'Alert',
+			'msg' => $message,
+		);
+
+		if (sizeof($data))
+		{
+			$result['data'] = $data;
+		}
+
+		self::send_json($result);
 	}
 
 
 	/**
 	 *  Success status
 	 *
-	 *  @param array $options Additional parameters to send with success result
+	 *  @param array $data Additional parameters to send with success result
 	 */
-	public static function success($options = array())
+	public static function success($data = array())
 	{
-		self::send_json(array_merge(array('status' => 'OK'), $options));
+		$result = array(
+			'status' => 'OK',
+		);
+
+		if (sizeof($data))
+		{
+			$result['data'] = $data;
+		}
+
+		self::send_json($result);
 	}
 
 	/**
@@ -73,17 +93,22 @@ class TauAjax
 	 *
 	 *  @param string $errmsg Error message
 	 *  @param integer $errno Error number, default 0
-	 *  @param array $options Additional parameters to send with error result
+	 *  @param array $data Additional parameters to send with error result
 	 */
-	public static function error($errmsg, $errno = 0, $options = array())
+	public static function error($errmsg, $errno = 0, $data = array())
 	{
-		$object = array(
+		$result = array(
 			'status' => 'Error',
 			'errmsg' => $errmsg,
 			'errno' => $errno,
 		);
 
-		self::send_json(array_merge($object, $options));
+		if (sizeof($data))
+		{
+			$result['data'] = $data;
+		}
+
+		self::send_json($result);
 	}
 
 	/**
@@ -91,9 +116,8 @@ class TauAjax
 	 *
 	 *  @param string &$message
 	 */
-	static public function compact_for_html(&$message)
+	static public function compact(&$message)
 	{
-		$message =  str_replace(array("\r\n", "\n", "\r", "\t"), array('', '', '', ''), $message);
+		$message =  str_replace(array("\r\n", "\n", "\r", "\t"), '', $message);
 	}
-
 }
