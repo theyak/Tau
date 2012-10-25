@@ -12,10 +12,7 @@
  *
  * @example
  *
- * $server = new TauDbServer();
- * $server->username = 'dbuser';
- * $server->password = 'somepassword';
- * $server->database = 'databasetousebydefault';
+ * $server = new TauDbServer('databasetouse', 'username', 'password');
  * $server->host = '127.0.0.1'; // Optional, defaults to 127.0.0.1
  * $server->port = 3306; // Optional, defaults the DB's default port
  * $db = TauDB::init('mysql', $server);
@@ -165,11 +162,18 @@ class TauDb
 
 
 	/**
+	 * Pointer to writable database. Used in master/slave setups
+	 * and setup with setWriteDb().
+	 * @var TauDb
+	 */
+	private $writeDb = null;
+
+	/**
 	 * Initializes a database connection
 	 *
 	 * @param string $engine
 	 * @param TauDbServer $server
-	 * @return $engine
+	 * @return TauDb $engine
 	 */
 
 	public static function init( $engine, TauDbServer $server )
@@ -578,6 +582,12 @@ class TauDb
 			return $this->select($sql, $ttl);
 		}
 
+		if (!is_null($this->writeDb) && $this->writeDb != $this)
+		{
+			$this->writeDb->query($sql, $ttl);
+			return;
+		}
+
 		$query = array(
 			'sql' => $sql,
 			'start' => microtime(true),
@@ -937,6 +947,19 @@ class TauDb
 		{
 			$this->dbFreeResult($resultSet);
 		}
+	}
+
+
+
+	/**
+	 * Sets up a pointer to a writeable db. Should be used in
+	 * cases where a master/slave setup is available.
+	 *
+	 * @param <type> $db
+	 */
+	public function setWriteDatabase($db)
+	{
+		$this->writeDb = $db;
 	}
 }
 
