@@ -82,9 +82,12 @@ class TauMysql extends TauDb
 	 */
 	public function dbUseDatabase($database)
 	{
-		if (!@mysql_select_db($database))
+		if ($database)
 		{
-			TauError::fatal('Invalid database');
+			if (!@mysql_select_db($database))
+			{
+				TauError::fatal('Invalid database');
+			}
 		}
 	}
 
@@ -150,11 +153,31 @@ class TauMysql extends TauDb
 	 * @param string $unescaped_string
 	 * @return string
 	 */
-	public function dbFieldName($unescaped_string)
+	public function dbFieldName($fieldName)
 	{
-		return "`" . @mysql_real_escape_string($unescaped_string) . "`";
+		$this->connect();
+		
+		$parts = explode('.', $fieldName);
+		foreach($parts AS $key => $value) {
+			$parts[$key] = '`' . @mysql_real_escape_string(trim($value, '`')) . '`';
+		}
+		
+		return implode('.', $parts);
 	}
 
+
+	
+	/**
+	 * Convert a PHP string into an SQL table name
+	 *
+	 * @param string $unescaped_string
+	 * @return string
+	 */
+	public function dbTableName($tableName)
+	{
+		return $this->dbFieldName($tableName);
+	}
+	
 
 	/**
 	 * Convert a PHP string value to a string value suitable for insertion in to SQL query.
@@ -164,10 +187,11 @@ class TauMysql extends TauDb
 	 */
 	public function dbStringify($unescaped_string)
 	{
+		$this->connect();
 		return "'" . @mysql_real_escape_string($unescaped_string) . "'";
 	}
 
-
+	
 
 	/**
 	 * Escape a string for insertion in to database
@@ -234,6 +258,7 @@ class TauMysql extends TauDb
 		}
 		return $rows;
 	}
+
 
 
 	/**

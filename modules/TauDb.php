@@ -6,7 +6,7 @@
  *
  * @Author          theyak
  * @Copyright       2012
- * @Project Page    None!
+ * @Project Page    https://github.com/theyak/Tau
  * @Dependencies    TauError, TauFS
  * @Documentation   None!
  *
@@ -39,13 +39,22 @@
  * emptyValue()
  *   Return SQL for an empty string or value
  *
+ * integer($value)
+ *   Convert a PHP value to an integer suitable for use in SQL query
+ * 
+ * boolean($value)
+ *   Convert a PHP value to a boolean suitable for use in SQL query
+ * 
+ * escape($value)
+ *   Convert PHP datatypes to those appropriate for SQL statements
+ * 
  * stringify($string)
- *   Encode a string into an SQL string, including proper escaping and
- *   quotations.
+ *   Encode a string into a string suitable for use in a SQL statement,
+ *   including proper escaping and quotations around value.
  *
  * fieldName($fieldName)
  *   Return a field name in SQL format
-
+ *
  * insertSql($table, $insert)
  *   Create SQL for an INSERT statement
  *
@@ -55,8 +64,11 @@
  * inSetSql($field, $set, $negate)
  *   Create SQL for IN SET
  *
- * escape($value)
- *   Convert PHP datatypes to those appropriate for SQL statements
+ * whereSql($where, $includeKeyword = true)
+ *   Create a WHERE string for SQL statement. If an array is passed in, the WHERE
+ *   is constructed based on the key and value pairs of the array and ANDed together.
+ *   If a string is passed in, it is just returned, possibly with WHERE prepended
+ *   if needed.
  *
  * select($sql, $ttl = 0)
  *   Perform a SELECT query on the database, including cache if supplied
@@ -100,12 +112,6 @@
  *
  * affectedRows()
  *   Get number of rows affected by last INSERT or UPDATE
- *
- * where($where)
- *   Create a WHERE string for SQL statement. If an array is passed in, the WHERE
- *   is constructed based on the key and value pairs of the array and ANDed together.
- *   If a string is passed in, it is just returned, possibly with WHERE prepended
- *   if needed.
  *
  * isTable($table, $dbName = null)
  *   Determine if table exists in database
@@ -213,6 +219,7 @@ class TauDb
 		$this->server = new TauDbServer($database, $user, $pass, $host, $port);
 		return self::init($engine, $this->server);
 	}
+	
 
 	/**
 	 * @abstract
@@ -390,18 +397,42 @@ class TauDb
 		return "''";
 	}
 
-
-
+	
+	
 	/**
-	 * Encode a string into an SQL string, including proper escaping and
-	 * quotations.
-	 *
+	 * Convert a PHP value to an integer suitable for use in SQL query
+	 * 
+	 * @param int $value
+	 * @return int
+	 */
+	public function integer($value)
+	{
+		return intval($value);
+	}
+
+	
+	
+	/**
+	 * Convert a PHP value to a boolean value suitable for use in SQL query.
+	 * @param bool $value
+	 * @return 
+	 */
+	public function boolean($value)
+	{
+		return intval($value);
+	}
+
+
+	
+	/**
+	 * Encode a string into a string suitable for use in a SQL statement,
+	 * including proper escaping and quotations around value.
+	 * 
 	 * @param type $string
 	 * @return string
 	 */
 	public function stringify($string)
 	{
-        $this->connect();
 		return $this->dbStringify($string);
 	}
 
@@ -415,28 +446,41 @@ class TauDb
 	 */
 	public function fieldName($fieldName)
 	{
-        $this->connect();
 		return $this->dbFieldName($fieldName);
 	}
 
 
+	
+	/**
+	 * Return a field name in SQL format
+	 *
+	 * @param type $fieldName
+	 * @return type
+	 */
+	public function tableName($fieldName)
+	{
+		return $this->dbTableName($fieldName);
+	}
+	
+	
 
 	/**
 	 * Create SQL for an INSERT statement
 	 *
 	 * @param string $table
-	 * @param array $insert
+	 * @param array $data
 	 * @return string
 	 */
-	public function insertSql($table, $insert)
+	public function insertSql($table, $data)
 	{
-		if (!is_array($insert) || sizeof($insert) < 1)
+		if (!is_array($data) || sizeof($data) < 1)
 		{
 			return;
 		}
 
+		$table = $this->tableName($table);
 		$fieldNames = $values = array();
-		foreach ($insert AS $fieldName => $value)
+		foreach ($data AS $fieldName => $value)
 		{
 			$fieldNames[] = $this->fieldName($fieldName);
 			$values[] = $this->escape($value);
@@ -457,20 +501,21 @@ class TauDb
 	 * @param string $where
 	 * @return string
 	 */
-	public function updateSql($table, $update, $where)
+	public function updateSql($table, $data, $where = '')
 	{
-		if (!is_array($update) || sizeof($update) < 1)
+		if (!is_array($data) || sizeof($data) < 1)
 		{
 			return;
 		}
 
+		$table = $this->tableName($table);
 		$values = array();
-		foreach ($update AS $fieldName => $value)
+		foreach ($data AS $fieldName => $value)
 		{
 			$values[] = $this->fieldName($fieldName) . ' = ' . $this->escape($value);
 		}
 
-		$sql = 'UPDATE ' . $table . ' SET ' . implode(', ', $values) . $this->where($where);
+		$sql = 'UPDATE ' . $table . ' SET ' . implode(', ', $values) . $this->whereSql($where);
 
 		return $sql;
 	}
@@ -485,7 +530,7 @@ class TauDb
 	 * @param bool $negate
 	 * @return string
 	 */
-	public function inSetSql($field, $set, $negate)
+	public function inSetSql($field, $set, $negate = false)
 	{
 		$sql = $this->fieldName($field) . ' ';
 		$sql .= ($negate ? 'NOT IN (' : 'IN (');
@@ -494,7 +539,50 @@ class TauDb
 		return $sql;
 	}
 
+	
+	
+	/**
+	 * Create a WHERE string for SQL statement. If an array is passed in, the WHERE
+	 * is constructed based on the key and value pairs of the array and ANDed together.
+	 * If a string is passed in, it is just returned, possibly with WHERE prepended
+	 * if needed.
+	 *
+	 * @param string|array $where
+	 * @param bool $includeKeyword Weather or not to include "WHERE" in result, default true
+	 * @return string
+	 *
+	 * @examples
+	 * $db->whereSql('where id = 1 AND class = 4);
+	 * $db->whereSql('id = 1 AND class = 4');
+	 * $db->whereSql(array('id' => 1, 'class' => 4));
+	 */
+	public function whereSql($where, $includeKeyword = true)
+	{
+		if (is_string($where))
+		{
+			if ($includeKeyword && stripos(trim($where), 'where') !== 0)
+			{
+				return ' WHERE ' . $where;
+			}
+			return ' ' . $where;
+		}
 
+		$string = array();
+		if (is_array($where))
+		{
+			foreach ($where AS $key => $value)
+			{
+				$string[] = $this->fieldName($key) . ' = ' . $this->escape($value);
+			}
+		}
+		if ($includeKeyword)
+		{
+			return ' WHERE ' . implode(' AND ' , $string);
+		}
+		return implode(' AND ', $string);
+	}
+
+	
 
 	/**
 	 * Convert PHP datatypes to those appropriate for SQL statements
@@ -509,7 +597,9 @@ class TauDb
 		if ($value instanceof TauSqlExpression)    return $value->get();
 		if (is_string($value))                     return $this->dbStringify($value);
 		if (is_float($value))					   return $value;
-		if (is_integer($value) || is_bool($value)) return intval($value);
+		if (is_integer($value))                    return $this->integer($value);
+		if (is_bool($value))                       return $this->boolean($value);
+		
 		return $this->emptyValue();
 	}
 
@@ -584,7 +674,7 @@ class TauDb
 
 		if (!is_null($this->writeDb) && $this->writeDb != $this)
 		{
-			$this->writeDb->query($sql, $ttl);
+			$this->writeDb->query($sql);
 			return;
 		}
 
@@ -697,6 +787,8 @@ class TauDb
 		return $rows;
 	}
 
+	
+	
 	/**
 	 * Retrieve all rows from an SQL query indexed by ID
 	 *
@@ -732,7 +824,8 @@ class TauDb
 
 
 	/**
-	 * Fetch pairs from the database. First value in result set is used as array key.
+	 * Fetch pairs from the database. First value in result set is used as 
+	 * array key and second value in result set is set as value.
 	 *
 	 * @param String $sql
 	 * @param int $ttl
@@ -819,9 +912,9 @@ class TauDb
 	 * @param string $table
 	 * @param array $values
 	 */
-	public function insert($table, $values)
+	public function insert($table, $data)
 	{
-		$sql = $this->insertSql($table, $values);
+		$sql = $this->insertSql($table, $data);
 		$this->query($sql);
 	}
 
@@ -870,27 +963,11 @@ class TauDb
 	 * $db->where('id = 1 AND class = 4');
 	 * $db->where(array('id' => 1, 'class' => 4));
 	 */
-	public function where($where)
+	public function where($where, $includeKeyword = true)
 	{
-		if (is_string($where))
-		{
-			if (stripos(trim($where), 'where') !== 0)
-			{
-				return ' WHERE ' . $where;
-			}
-			return ' ' . $where;
-		}
-
-		$string = array();
-		if (is_array($where))
-		{
-			foreach ($where AS $key => $value)
-			{
-				$string[] = $this->fieldName($key) . ' = ' . $this->escape($value);
-			}
-		}
-		return ' WHERE ' . implode(' AND ' , $string);
+		return $this->whereSql($where, $includeKeyword);
 	}
+	
 
 
 
