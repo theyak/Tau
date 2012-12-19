@@ -149,6 +149,18 @@ class TauDbMysql
 		return $results;
 	}
 	
+	public function fetchAllObject($resultSet = null) {
+		if ($resultSet == null) {
+			$resultSet = $this->db->lastResultSet;
+		}
+
+		$results = array();
+		while ($row = @mysql_fetch_assoc($resultSet)) {
+			$results[] = $row;
+		}
+		return $results;
+	}
+	
 	public function freeResult($resultSet = null) {
 		if ($resultSet == null) {
 			if ($this->db->lastResultSet != null) {
@@ -214,8 +226,15 @@ class TauDbMysql
 		return 'NULL';
 	}
 	
-	public function stringify($value) {
-		return $this->stringTick . mysql_real_escape_string((string)$value) . $this->stringTick;
+	public function stringify($value, $quote = true) {
+		if ( $quote )
+		{
+			return mysql_real_escape_string((string)$value);
+		}
+		else
+		{
+			return $this->stringTick . mysql_real_escape_string((string)$value) . $this->stringTick;
+		}
 	}
 	
 	public function escape($value) {

@@ -48,7 +48,7 @@
  * escape($value)
  *   Convert PHP datatypes to those appropriate for SQL statements
  * 
- * stringify($string)
+ * stringify($string, $quote=true)
  *   Encode a string into a string suitable for use in a SQL statement,
  *   including proper escaping and quotations around value.
  *
@@ -70,31 +70,40 @@
  *   If a string is passed in, it is just returned, possibly with WHERE prepended
  *   if needed.
  *
- * select($sql, $ttl = 0)
+ * select($sql, $expires = 0)
  *   Perform a SELECT query on the database, including cache if supplied
  *
- * query($sql, $ttl = 0)
+ * query($sql, $expires = 0)
  *   Perform an SQL query (anything other than SELECT) on the database
  *
  * fetch($resultSet = null)
  *   Fetch a row from a result set
  *
- * fetchOne($sql, $ttl = 0)
+ * fetchObject($resultSet = null)
+ *   Fetch a row from a result set as an object
+ *
+ * fetchOne($sql, $expires = 0)
  *   Retrieve exactly one row from SQL query
  *
- * fetchAll($sql, $ttl = 0)
+ * fetchOneObject($sql, $expires = 0)
+ *   Retrieve exactly one row as an objectfrom SQL query
+ *
+ * fetchAll($sql, $expires = 0)
  *   Retrieve all rows from an SQL query
  *
- * fetchAllWithId($sql, $ttl = 0)
+ * fetchAllObject($sql, $expires = 0)
+ *   Retrieve all rows from an SQL query. Each row is an object.
+ *
+ * fetchAllWithId($sql, $expires = 0)
  *   Retrieve all rows from an SQL query indexed by an ID
  *
- * fetchPairs($sql, $ttl = 0)
+ * fetchPairs($sql, $expires = 0)
  *   Fetch pairs from the database. First value in result set is used as array key
  *
- * fetchColumn($sql, $ttl = 0)
+ * fetchColumn($sql, $expires = 0)
  *   Fetch a column from a database SELECT query
  *
- * fetchValue($sql, $ttl = 0)
+ * fetchValue($sql, $expires = 0)
  *   Fetch a single value from the database. Very useful for things like
  *   SELECT COUNT(*) FROM ... WHERE ...
  *
@@ -431,9 +440,9 @@ class TauDb
 	 * @param type $string
 	 * @return string
 	 */
-	public function stringify($string)
+	public function stringify($string, $quote = true)
 	{
-		return $this->dbStringify($string);
+		return $this->dbStringify($string, $quote);
 	}
 
 
@@ -590,6 +599,7 @@ class TauDb
 	 * @param any $value
 	 * @return any
 	 */
+	
 	public function escape($value)
 	{
 		if (is_null($value))                       return $this->nullValue();
@@ -609,10 +619,10 @@ class TauDb
 	 * Perform a SELECT query on the database, including cache if supplied
 	 *
 	 * @param string $sql
-	 * @param int $ttl Time, in seconds, to keep data in cache
+	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return handle
 	 */
-	public function select($sql, $ttl = 0)
+	public function select($sql, $expires = 0)
 	{
 		$query = array(
 			'sql' => $sql,
@@ -621,7 +631,7 @@ class TauDb
 
 		$this->connect();
 
-		if ($this->cache && $ttl > 0)
+		if ($this->cache && $expires > 0)
 		{
 			// Load from cache. If cache miss, select as regular and store in cache
 			$query['cached'] = true;
@@ -633,7 +643,7 @@ class TauDb
 				if ($resultSet)
 				{
 					// Save query in cache
-					$this->resultSet = $this->cache->querySave($this, $resultSet, $sql, $ttl);
+					$this->resultSet = $this->cache->querySave($this, $resultSet, $sql, $expires);
 					$this->freeResult($resultSet);
 				}
 			}
@@ -664,12 +674,12 @@ class TauDb
 	 *
 	 * @param string $sql
 	 */
-	public function query($sql, $ttl = 0)
+	public function query($sql, $expires = 0)
 	{
 		// Cache calls MUST be select queries
-		if ($ttl && strtolower(substr(trim($sql), 0, 6)) == 'select')
+		if ($expires && strtolower(substr(trim($sql), 0, 6)) == 'select')
 		{
-			return $this->select($sql, $ttl);
+			return $this->select($sql, $expires);
 		}
 
 		if (!is_null($this->writeDb) && $this->writeDb != $this)
@@ -725,23 +735,47 @@ class TauDb
 
 
 	/**
+	 * Fetch a row from a result set as an object
+	 *
+	 * @param resource $resultSet
+	 * @return array|false
+	 */
+	public function fetchObject($resultSet = null)
+	{
+		if (is_null($resultSet))
+		{
+			$resultSet = $this->resultSet;
+		}
+
+		// Check if this is a cached object
+		if (is_int($resultSet))
+		{
+			return (object)$this->cache->queryFetch($resultSet);
+		}
+
+		return $this->dbFetchObject($resultSet);
+	}
+
+
+
+	/**
 	 * Retrieve exactly one row from SQL query
 	 *
 	 * @param string $sql
-	 * @param int $ttl
+	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array|false
 	 */
-	public function fetchOne($sql, $ttl = 0)
+	public function fetchOne($sql, $expires = 0)
 	{
 		if (is_string($sql))
 		{
 			if (stripos('limit', substr($sql, -12)) === false)
 			{
-				$resultSet = $this->select($sql . ' LIMIT 1', $ttl);
+				$resultSet = $this->select($sql . ' LIMIT 1', $expires);
 			}
 			else
 			{
-				$resultSet = $this->select($sql, $ttl);
+				$resultSet = $this->select($sql, $expires);
 			}
 		}
 		else
@@ -757,17 +791,87 @@ class TauDb
 
 
 	/**
-	 * Retrieve all rows from an SQL query
+	 * Retrieve exactly one rexcord, as an object, from an SQL SELECT statement
 	 *
 	 * @param string $sql
-	 * @param int $ttl
-	 * @return array
+	 * @param int $expires Time, in seconds, to keep data in cache
+	 * @return array|false
 	 */
-	public function fetchAll($sql, $ttl = 0)
+	public function fetchOneObject($sql, $expires = 0)
 	{
 		if (is_string($sql))
 		{
-			$resultSet = $this->select($sql, $ttl);
+			if (stripos('limit', substr($sql, -12)) === false)
+			{
+				$resultSet = $this->select($sql . ' LIMIT 1', $expires);
+			}
+			else
+			{
+				$resultSet = $this->select($sql, $expires);
+			}
+		}
+		else
+		{
+			$resultSet = $sql;
+		}
+
+		$row = $this->fetchObject($resultSet);
+		$this->freeResult($resultSet);
+		return $row;
+	}
+
+
+
+
+	/**
+	 * Retrieve all rows, each row as an object, from an SQL query
+	 *
+	 * @param string $sql
+	 * @param int $expires Time, in seconds, to keep data in cache
+	 * @return array An array of records retrieved, each record as an object.
+	 */
+	public function fetchAllObject($sql, $expires = 0)
+	{
+		if (is_string($sql))
+		{
+			$resultSet = $this->select($sql, $expires);
+		}
+		else
+		{
+			$resultSet = $sql;
+		}
+
+		if (is_int($resultSet))
+		{
+			$rows = array();
+			$cache_rows = $this->cache->getResults($resultSet);
+			foreach ($cache_rows AS $row)
+			{
+				$rows[] = (object)$row;
+			}
+		}
+		else
+		{
+			$rows = $this->dbFetchAllObject($resultSet);
+		}
+		$this->freeResult($resultSet);
+
+		return $rows;
+	}
+
+
+	/**
+	 * Retrieve all rows from an SQL query
+	 *
+	 * @param string $sql
+	 * @param int $expires Time, in seconds, to keep data in cache
+	 * @return array
+	 */
+	public function fetchAll($sql, $expires = 0)
+	{
+		if (is_string($sql))
+		{
+			$resultSet = $this->select($sql, $expires);
 		}
 		else
 		{
@@ -787,21 +891,21 @@ class TauDb
 		return $rows;
 	}
 
-	
+
 	
 	/**
 	 * Retrieve all rows from an SQL query indexed by ID
 	 *
 	 * @param string $sql
 	 * @param $id Name of field to use as ID. If left blank, the first field is used.
-	 * @param int $ttl
+	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array
 	 */
-	public function fetchAllWithId($sql, $id = '', $ttl = 0)
+	public function fetchAllWithId($sql, $id = '', $expires = 0)
 	{
 		if (is_string($sql))
 		{
-			$resultSet = $this->select($sql, $ttl);
+			$resultSet = $this->select($sql, $expires);
 		}
 		else
 		{
@@ -828,14 +932,14 @@ class TauDb
 	 * array key and second value in result set is set as value.
 	 *
 	 * @param String $sql
-	 * @param int $ttl
+	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array
 	 */
-	public function fetchPairs($sql, $ttl = 0)
+	public function fetchPairs($sql, $expires = 0)
 	{
 		if (is_string($sql))
 		{
-			$resultSet = $this->select($sql, $ttl);
+			$resultSet = $this->select($sql, $expires);
 		}
 		else
 		{
@@ -859,14 +963,14 @@ class TauDb
 	 * Fetch a column from a database SELECT query
 	 *
 	 * @param String $sql
-	 * @param int $ttl
+	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array
 	 */
-	public function fetchColumn($sql, $ttl = 0)
+	public function fetchColumn($sql, $expires = 0)
 	{
 		if (is_string($sql))
 		{
-			$resultSet = $this->select($sql, $ttl);
+			$resultSet = $this->select($sql, $expires);
 		}
 		else
 		{
@@ -890,12 +994,12 @@ class TauDb
 	 * SELECT COUNT(*) FROM ... WHERE ...
 	 *
 	 * @param string $sql
-	 * @param int $ttl
+	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return mixed
 	 */
-	public function fetchValue($sql, $ttl = 0)
+	public function fetchValue($sql, $expires = 0)
 	{
-		$row = $this->fetchOne($sql, $ttl);
+		$row = $this->fetchOne($sql, $expires);
 		if (is_array($row))
 		{
 			return reset($row);

@@ -16,39 +16,77 @@ if (!defined('TAU'))
 
 class TauAjax
 {
-	public static $content_type = 'application/json';
-
 	/**
-	 *  Send JSON
+	 * Send JSON data. The data passed in will be converted to a JSON
+	 * string appropriate for sending across the intertubes.
+	 * 
 	 *  @param mixed $data Data to send
 	 */
 	public static function send_json($data)
 	{
 		header('Pragma: no-cache');
 		header('Cache-Control: private, no-cache');
-		header('Content-Disposition: inline; filename="files.json"');
+		header('Content-Disposition: inline; filename="file.json"');
 		header('X-Content-Type-Options: nosniff');
-		header('Content-Type: ' . TauAjax::$content_type);
+		header('Content-Type: application/json');
 	    echo json_encode($data);
 		exit;
 	}
 
-	public static function text_mode()
-	{
-		self::$content_type = 'text/plain';
-	}
 
+	
 	/**
-	 *  Send URL formated parameters. Very useful for REST-like applications
+	 * Send text data.
+	 * 
+	 * @param type $string
+	 */
+	public static function send_string($string)
+	{
+		self::send_text($string);
+	}
+	
+
+	
+	/**
+	 * Send text data.
+	 * 
+	 * @param type $string
+	 */
+	public static function send_text($string)
+	{
+		header('Pragma: no-cache');
+		header('Cache-Control: private, no-cache');
+		header('Content-Disposition: inline; filename="file.txt"');
+		header('X-Content-Type-Options: nosniff');
+		header('Content-Type: text/plain');
+	    echo $string;
+		exit;		
+	}
+	
+	
+	
+	/**
+	 * Send URL formated parameters. Very useful for REST-like applications.
+	 * 
+	 * @param array $parameters 
+	 * @param string $delimiter Delimiter to use for query, usually & or &amp;
 	 */
 	static public function send_query($parameters, $delimiter = '&')
 	{
+		header('Pragma: no-cache');
+		header('Cache-Control: private, no-cache');
+		header('Content-Disposition: inline; filename="query.txt"');
+		header('X-Content-Type-Options: nosniff');
+		header('Content-Type: text/plain');
 		echo http_build_query($parameters, '', $delimiter);
 		exit;
 	}
+	
+	
 
 	/**
-	 * Respond to Ajax with a status of Alert
+	 * Respond to AJAX with a status of Alert and the 'msg' field set to
+	 * text to display in an alert box.
 	 *
 	 * @param string $message
 	 * @param $data Optional data to send along with JSON result
@@ -69,10 +107,11 @@ class TauAjax
 	}
 
 
+
 	/**
-	 *  Success status
+	 * Respond to AJAX with a status of OK. Same as TauAjax::OK().
 	 *
-	 *  @param array $data Additional parameters to send with success result
+	 * @param array $data Additional parameters to send with success result
 	 */
 	public static function success($data = array())
 	{
@@ -88,12 +127,28 @@ class TauAjax
 		self::send_json($result);
 	}
 
+	
+	
 	/**
-	 *  Error status
+	 * Respond to AJAX with a status of OK. Same as TauAjax::success().
 	 *
-	 *  @param string $errmsg Error message
-	 *  @param integer $errno Error number, default 0
-	 *  @param array $data Additional parameters to send with error result
+	 * @param array $data Additional parameters to send with success result
+	 */
+	public static function OK($data = array())
+	{
+		self::success($data);
+	}
+
+	
+	
+	/**
+	 * Send an AJAX response with 'status' = 'Error', 'errmsg' equal to the contents
+	 * of the $errmsg paramater, 'errno' equal to the contents of the $errno
+	 * paramater, and 'data' equal to the contents of the $data parameter.
+	 *
+	 * @param string $errmsg Error message
+	 * @param integer $errno Error number, default 0
+	 * @param array $data Additional parameters to send with error result
 	 */
 	public static function error($errmsg, $errno = 0, $data = array())
 	{
@@ -111,13 +166,17 @@ class TauAjax
 		self::send_json($result);
 	}
 
+	
+	
 	/**
-	 *  Compact for html
+	 * Helper function to compact for html, converting new lines, tabs, and
+	 * multiple spaces to a single space.
 	 *
-	 *  @param string &$message
+	 * @param string &$message
 	 */
 	static public function compact(&$message)
 	{
-		$message =  str_replace(array("\r\n", "\n", "\r", "\t"), '', $message);
+		$message = str_replace(array("\r\n", "\n", "\r", "\t"), ' ', $message);
+		$message = preg_replace('@\s+@', ' ', $message);
 	}
 }

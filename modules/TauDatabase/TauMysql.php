@@ -185,10 +185,15 @@ class TauMysql extends TauDb
 	 * @param string $unescaped_string
 	 * @return string
 	 */
-	public function dbStringify($unescaped_string)
+	public function dbStringify($unescaped_string, $quote = true)
 	{
 		$this->connect();
-		return "'" . @mysql_real_escape_string($unescaped_string) . "'";
+
+		if ($quote) {
+			return "'" . @mysql_real_escape_string($unescaped_string) . "'";
+		} else {
+			return mysql_real_escape_string($unescaped_string);
+		}
 	}
 
 	
@@ -217,6 +222,17 @@ class TauMysql extends TauDb
 	}
 
 
+	/**
+	 * Fetch a row from the database as on object
+	 * @param handle $resultSet
+	 * @return assoc|false 
+	 */
+	protected function dbFetchObject($resultSet)
+	{
+		return @mysql_fetch_object($resultSet);
+	}
+	
+	
 
 	/**
 	 * Fetch all rows from the database
@@ -230,10 +246,28 @@ class TauMysql extends TauDb
 		{
 			$rows[] = $row;
 		}
+		
 		return $rows;
 	}
 
 
+	/**
+	 * Retrieve all rows, each row as an object, from an SQL query
+	 * 
+	 * @param handle $resultSet
+	 * @return assoc An array of records retrieved, each record as an object.
+	 */
+	protected function dbFetchAllObject($resultSet)
+	{
+		$rows = array();
+		while ($row = @mysql_fetch_object($resultSet))
+		{
+			$rows[] = $row;
+		}
+		return $rows;
+	}
+	
+	
 
 	/**
 	 * Fetch all rows from the database storing data in an associative array
