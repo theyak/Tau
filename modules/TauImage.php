@@ -177,12 +177,12 @@ class TauImage
 		$src_x = $src_y = 0;
 
 		if($src_w > $src_h) {
-            $src_x = ceil(($src_w - $src_h) / 2);
-            $src_w = $src_h;
-        } else {
-            $src_y = ceil(($src_h - $src_w) / 2);
-            $src_h = $src_w;
-        }
+			$src_x = ceil(($src_w - $src_h) / 2);
+			$src_w = $src_h;
+		} else {
+			$src_y = ceil(($src_h - $src_w) / 2);
+			$src_h = $src_w;
+		}
 
 		$destination = @imagecreatetruecolor($size, $size);
 		@imagecopyresampled($destination, $this->_image, 0, 0, $src_x, $src_y, $size, $size, $src_w, $src_h);
@@ -210,6 +210,8 @@ class TauImage
 	 * If you want to build a better one, such as one with discrete cosine transform, please
 	 * do and contribute it! This one uses 8 bit true-grayscale images as opposed to 6-bit
 	 * pseudo-greyscale images as described on hackerfactor.
+	 * See http://stackoverflow.com/questions/14106984/how-to-calculate-discrete-cosine-transform-dct-in-php
+	 * for possible discrete cosine transform algorithms.
 	 *
 	 * @return type
 	 */
