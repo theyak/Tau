@@ -29,9 +29,9 @@ class TauFS
 
 		$dh = opendir($dir);
 
-		if (($dh = opendir($dir)))
+		if (($dh = opendir($dir)) !== false)
 		{
-			while ($file = readdir($dh))
+			while (($file = readdir($dh)) !== false)
 			{
 				if (!in_array($file, self::$exclude))
 				{
@@ -51,9 +51,9 @@ class TauFS
 		$dir = rtrim($dir, '/');
 		$dir = rtrim($dir, '\\');
 
-		if (($dh = opendir($dir)))
+		if (($dh = opendir($dir)) !== false)
 		{
-			while ($file = readdir($dh))
+			while (($file = readdir($dh)) !== false)
 			{
 				if (!in_array($file, self::$exclude))
 				{
