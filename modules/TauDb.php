@@ -55,9 +55,12 @@
  * fieldName($fieldName)
  *   Return a field name in SQL format
  *
- * insertSql($table, $insert)
+ * insertSql($table, $data)
  *   Create SQL for an INSERT statement
  *
+ * insertMultiSql($table, $data)
+ *   Create SQL for a multi-row INSERT statement
+ * 
  * updateSql($table, $update, $where)
  *   Create SQL for an UPDATE statement
  *
@@ -107,9 +110,12 @@
  *   Fetch a single value from the database. Very useful for things like
  *   SELECT COUNT(*) FROM ... WHERE ...
  *
- * insert($table, $values)
+ * insert($table, $data)
  *   Insert data in to a table
  *
+ * insertMulti($table, $data)
+ *   Insert multiple rows in to a table
+ * 
  * update($table, $values, $where)
  *   Update data in a table
  *
@@ -501,6 +507,57 @@ class TauDb
 	}
 
 
+	
+	/**
+	 * Create SQL for a multi-row INSERT statement
+	 *
+	 * @param string $table
+	 * @param array $data Data to insert. Must be an array of arrays. The first
+	 *        element of the array must contain field names for keys.
+	 * @return string
+	 */
+	public function insertMultiSql($table, $data)
+	{
+		if (!is_array($data) || !is_array($data[0]) || sizeof($data) < 1)
+		{
+			return;
+		}
+		
+
+		$table = $this->tableName($table);
+		$fieldNames = $values = $parts = array();
+		$record_number = 0;
+		
+		foreach ($data AS $record) 
+		{
+			$values = array();
+			$record_number++;
+			if ($record_number === 1)
+			{
+				foreach ($record AS $fieldName => $value)
+				{
+					$fieldNames[] = $this->fieldName($fieldName);
+					$values[] = $this->escape($value);
+				}				
+			}
+			else
+			{
+				foreach ($record AS $fieldName => $value)
+				{
+					$values[] = $this->escape($value);
+				}
+				
+			}
+			$parts[] = '(' . implode(', ', $values) . ')';
+		}
+		
+		$sql = 'INSERT INTO ' . $table . ' (' . implode(', ', $fieldNames) . ') ';
+		$sql .= 'VALUES ' . implode(',', $parts);
+
+		return $sql;
+	}
+	
+	
 
 	/**
 	 * Create SQL for an UPDATE statement
@@ -1022,6 +1079,19 @@ class TauDb
 		$this->query($sql);
 	}
 
+
+	
+	/**
+	 * Insert multiple rows in to a table
+	 *
+	 * @param string $table
+	 * @param array $values
+	 */
+	public function insertMulti($table, $data)
+	{
+		$sql = $this->insertMultiSql($table, $data);
+		$this->query($sql);
+	}
 
 
 	/**
