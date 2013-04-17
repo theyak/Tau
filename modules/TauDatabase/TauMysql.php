@@ -9,7 +9,7 @@
  * @Documentation   None!
  *
  * changelog:
- *   1.0.0  Sep  8, 20122  Created
+ *   1.0.0  Sep  8, 2012  Created
  */
 
 if (!defined('TAU'))
