@@ -73,6 +73,9 @@
  *   If a string is passed in, it is just returned, possibly with WHERE prepended
  *   if needed.
  *
+ * limitSql(Start, $limit)
+ *   Create a LIMIT string for SQL
+ *
  * select($sql, $expires = 0)
  *   Perform a SELECT query on the database, including cache if supplied
  *
@@ -648,22 +651,56 @@ class TauDb
 		return implode(' AND ', $string);
 	}
 
+
+
+	/**
+	 * Create a LIMIT string for SQL
+	 *
+	 * @param int $start The row number to start retrieval at, or, if $limit === null,
+	 *                   the number of rows to retrieve.
+	 * @param int $limit Number of rows to retrieve. If null, $start will be used to
+	 *                   determine number of rows to retrieve starting with first row.
+	 * @return string
+	 *
+	 * @examples
+	 * $db->limit(10);  // Returns first 10 results
+	 * $db->limit(5, 10);  // Returns 10 results starting with row 5
+	 */
+	public function limitSql($start, $limit = null) 
+	{
+		$start = intval($start);
+		
+		if (is_null($limit)) {
+			if (empty($start)) {
+				return ' ';
+			}
+			return ' LIMIT ' . $start;
+		}
+		
+		
+		$limit = intval($limit);
+		if (empty($start)) {
+			return ' LIMIT ' . $limit;
+		}
+		
+		return ' LIMIT ' . $start . ', ' . $limit;
+	}
 	
+
 
 	/**
 	 * Convert PHP datatypes to those appropriate for SQL statements
 	 *
 	 * @param any $value
 	 * @return any
-	 */
-	
+	 */	
 	public function escape($value)
 	{
 		if (is_null($value))                       return $this->nullValue();
 		if ($value === 'NOW()')                    return $this->now();
 		if ($value instanceof TauSqlExpression)    return $value->get();
 		if (is_string($value))                     return $this->dbStringify($value);
-		if (is_float($value))					   return $value;
+		if (is_float($value))                      return $value;
 		if (is_integer($value))                    return $this->integer($value);
 		if (is_bool($value))                       return $this->boolean($value);
 		
