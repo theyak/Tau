@@ -835,11 +835,20 @@ class TauDb
 
 		// Check if this is a cached object
 		if (is_int($resultSet))
+		{			
+			 $row = $this->cache->queryFetch($resultSet);
+		}
+		else
 		{
-			return $this->cache->queryFetch($resultSet);
+			$row = $this->dbFetch($resultSet);		
 		}
 
-		return $this->dbFetch($resultSet);
+		if ($row) 
+		{
+			return $row;
+		}
+		
+		return false;
 	}
 
 
