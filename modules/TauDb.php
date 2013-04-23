@@ -714,7 +714,12 @@ class TauDb
 		if (is_float($value))                      return $value;
 		if (is_integer($value))                    return $this->integer($value);
 		if (is_bool($value))                       return $this->boolean($value);
-		
+
+		if (is_array($value)) 
+		{
+			return '(' . implode(', ', array_map(array($this, 'escape'), $value)) . ')';
+		}
+
 		return $this->emptyValue();
 	}
 
