@@ -663,8 +663,19 @@ class TauDb
 	 * @return string
 	 *
 	 * @examples
-	 * $db->limit(10);  // Returns first 10 results
-	 * $db->limit(5, 10);  // Returns 10 results starting with row 5
+	 * @examples
+	 * // SQL query for retrieving first 10 rows
+	 * echo $db->limitSql(10);
+	 * >>> LIMIT 10
+	 *
+	 * // Same as above
+	 * echo $db->limitSql(0, 10);
+	 * >>> LIMIT 10
+	 *
+	 * // SQL query for retrieving 10 rows starting from row 5
+	 * echo $db->limiSql(5, 10);
+	 * >>> LIMIT 5, 10
+	 */
 	 */
 	public function limitSql($start, $limit = null) 
 	{
