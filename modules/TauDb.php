@@ -495,6 +495,11 @@ class TauDb
 		{
 			return;
 		}
+		
+		if (is_array(reset($data))) 
+		{
+			return $this->insertMultiSql($table, $data);
+		}		
 
 		$table = $this->tableName($table);
 		$fieldNames = $values = array();
