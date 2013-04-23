@@ -155,7 +155,7 @@ class TauMysqli extends TauDb
 
 	public function dbError()
 	{
-		return @mysql_error();
+		return @mysqli_error();
 	}
 
 
@@ -274,7 +274,7 @@ class TauMysqli extends TauDb
 	protected function dbFetchAllObject($resultSet)
 	{
 		$rows = array();
-		while ($row = @mysql_fetch_object($resultSet))
+		while ($row = @mysqli_fetch_object($resultSet))
 		{
 			$rows[] = $row;
 		}
