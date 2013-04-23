@@ -19,6 +19,12 @@ if (!defined('TAU'))
 
 class TauMysqli extends TauDb
 {
+	/**
+	 * Reference to most recent result set
+	 * @var resource
+	 */
+	private $resultSet;
+	
 	function __construct($server)
 	{
 		$this->server = $server;
@@ -119,7 +125,8 @@ class TauMysqli extends TauDb
 	 */
 	public function dbQuery($sql)
 	{
-		return @mysqli_query($sql, $this->server->connection);
+		$this->resultSet = mysqli_query($this->server->connection, $sql);
+		return $this->resultSet;
 	}
 
 
