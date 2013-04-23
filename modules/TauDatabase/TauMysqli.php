@@ -37,24 +37,26 @@ class TauMysqli extends TauDb
 	function connect()
 	{
 		if (!$this->server->connection)
-		{
+		{;
 			$this->server->connection = mysqli_connect(
-				$this->server->host . ':' . $this->server->port,
+				$this->server->host,
 				$this->server->username,
 				$this->server->password,
-				true
+				$this->server->database,
+				$this->server->port
 			);
 
 			if (!$this->server->connection)
 			{
-				if ($this->server->host != '127.0.0.1' && $this->server->host != 'localhost')
+				if ($this->server->host === '127.0.0.1' || $this->server->host === 'localhost')
 				{
 					$message = array(
 						'Unable to connect to database. The database server is either down ',
 						'or an invalid username and password combination was supplied.<br><br>',
 						'You will need to grant access to the database for user ' . $dbuser,
 						' with something like:<br><br>',
-						'&nbsp;&nbsp;&nbsp;&nbsp;GRANT ALL ON ' . $dbname . '.* TO ' . $dbuser,
+						'&nbsp;&nbsp;&nbsp;&nbsp;GRANT ALL ON ' . $this->server->database . 
+						'.* TO ' . $this->server->username,
 						'@\'%\' IDENTIFIED BY \'PASSWORD\'',
 						'<br><br>Please see <a href="http://www.cyberciti.biz/tips/',
 						'how-do-i-enable-remote-access-to-mysql-database-server.html">',
@@ -68,7 +70,10 @@ class TauMysqli extends TauDb
 					TauError::fatal('Unable to connect to database.');
 				}
 			}
-			$this->dbUseDatabase($this->server->database);
+			else
+			{
+				mysqli_set_charset($this->server->connection, "utf8");
+			}
 		}
 
 		return $this->server->connection;
@@ -159,7 +164,7 @@ class TauMysqli extends TauDb
 
 		$parts = explode('.', $fieldName);
 		foreach($parts AS $key => $value) {
-			$parts[$key] = '`' . @mysqli_real_escape_string(trim($value, '`')) . '`';
+			$parts[$key] = '`' . @mysqli_real_escape_string($this->server->connection, trim($value, '`')) . '`';
 		}
 
 		return implode('.', $parts);
@@ -190,9 +195,9 @@ class TauMysqli extends TauDb
 		$this->connect();
 
 		if ($quote) {
-			return "'" . @mysqli_real_escape_string($unescaped_string) . "'";
+			return "'" . @mysqli_real_escape_string($this->server->connection, $unescaped_string) . "'";
 		} else {
-			return mysqli_real_escape_string($unescaped_string);
+			return mysqli_real_escape_string($this->server_connection, $unescaped_string);
 		}
 	}
 
@@ -206,7 +211,9 @@ class TauMysqli extends TauDb
 	 */
 	public function dbEscape($unescaped_string)
 	{
-		return @mysqli_real_escape_string($unescaped_string);
+		$this->connect();
+		
+		return @mysqli_real_escape_string($this->server->connection, $unescaped_string);
 	}
 
 
