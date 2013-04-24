@@ -19,7 +19,7 @@ class TauCache
 	/**
 	 * Referecnce to cache engine driver
 	 */
-	private $driver;
+	public $driver;
 	
 
 	/**
@@ -163,6 +163,15 @@ class TauCache
 		$this->queryIndex[$this->queryNumber] = 0;
 		
 		return $this->queryNumber++;
+	}
+
+
+
+	function queryRemove($query)
+	{
+		$query = preg_replace('/[\n\r\s\t]+/', ' ', $query);
+		$key = 'sql/' . md5($query);
+		$this->driver->remove($key);
 	}
 
 
