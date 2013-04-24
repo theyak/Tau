@@ -113,6 +113,9 @@
  *   Fetch a single value from the database. Very useful for things like
  *   SELECT COUNT(*) FROM ... WHERE ...
  *
+ * uncache($sql)
+ *   Remove a chache entry for a particular SQL statement
+ *
  * insert($table, $data)
  *   Insert data in to a table
  *
@@ -1134,6 +1137,21 @@ class TauDb
 
 
 
+ 	/**
+	 * Remove a chache entry for a particular SQL statement
+	 *
+	 * @param string $sql
+	 */
+	public function uncache($sql)
+	{
+		if ($this->cache)
+		{
+			$this->cache->queryRemove($sql);
+		}
+	}
+
+	
+
 	/**
 	 * Insert data in to a table
 	 *
@@ -1147,7 +1165,6 @@ class TauDb
 	}
 
 
-	
 	/**
 	 * Insert multiple rows in to a table
 	 *
