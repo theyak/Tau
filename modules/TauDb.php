@@ -1365,7 +1365,7 @@ class TauDb
 	//
 
 	private $from = '';
-	private $fields = '';
+	private $fields = ' * ';
 	private $where = array();
 	private $limit = '';
 
@@ -1523,7 +1523,7 @@ class TauDb
 		}
 
 		$this->from = '';
-		$this->fields = '*';
+		$this->fields = ' * ';
 		$this->where = array();
 		$this->limit = '';
 
