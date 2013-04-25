@@ -2,8 +2,6 @@
 /**
  * Database Module For TAU
  *
- * This is a replacement for TauDatabase. It's not quite as functional - yet
- *
  * @Author          theyak
  * @Copyright       2012
  * @Project Page    https://github.com/theyak/Tau
@@ -815,7 +813,7 @@ class TauDb
 		if (is_null($sql)) {
 			$sql = $this->sql();
 		}
-		echo $sql;
+
 		$query = array(
 			'sql' => $sql,
 			'start' => microtime(true),
