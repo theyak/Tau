@@ -22,7 +22,10 @@
  * Tau::dump($db->fetchAll('SELECT * FROM table'));
  *
  * changelog:
- *   1.0.0  Sep  8, 20122  Created
+ *   1.0.0  Sep  8, 2012  Created
+ *
+ *   1.1.0  Apr 24, 2013  Added small, very limited, method chaining for SELECTs
+ *
  *
  * ::init($engine, TauDbServer $server)
  *   Initialize a database connection
@@ -41,13 +44,13 @@
  *
  * integer($value)
  *   Convert a PHP value to an integer suitable for use in SQL query
- * 
+ *
  * boolean($value)
  *   Convert a PHP value to a boolean suitable for use in SQL query
- * 
+ *
  * escape($value)
  *   Convert PHP datatypes to those appropriate for SQL statements
- * 
+ *
  * stringify($string, $quote=true)
  *   Encode a string into a string suitable for use in a SQL statement,
  *   including proper escaping and quotations around value.
@@ -60,7 +63,7 @@
  *
  * insertMultiSql($table, $data)
  *   Create SQL for a multi-row INSERT statement
- * 
+ *
  * updateSql($table, $update, $where)
  *   Create SQL for an UPDATE statement
  *
@@ -113,15 +116,12 @@
  *   Fetch a single value from the database. Very useful for things like
  *   SELECT COUNT(*) FROM ... WHERE ...
  *
- * uncache($sql)
- *   Remove a chache entry for a particular SQL statement
- *
  * insert($table, $data)
  *   Insert data in to a table
  *
  * insertMulti($table, $data)
  *   Insert multiple rows in to a table
- * 
+ *
  * update($table, $values, $where)
  *   Update data in a table
  *
@@ -142,6 +142,27 @@
  *
  * freeResult($resultSet)
  *   Release result set from memory
+ *
+ * The following are for a small, barely functional, method chaining SELECT builder
+ *
+ * fields($fields)
+ *   List of fields to user for SELECT query
+ *
+ * from($table)
+ *   Table to use for SELECT query
+ *
+ * where($field, $value)
+ *   Where option for SELECT query
+ *
+ * or_where($field, $value)
+ *   OR where option for SELECT query
+ *
+ * limit($limit, $start)
+ *   Limit values for SELECT query
+ *
+ * sql($table = '', $limit = 0, $start = 0)
+ *   Builds the SQL statement for the SELECT builder
+ *
  */
 
 if (!defined('TAU'))
@@ -211,6 +232,7 @@ class TauDb
 		if ( ! class_exists( $engine ) )
 		{
 			$file = dirname( __FILE__ ) . Tau::DS . 'TauDatabase' . Tau::DS . $engine . '.php';
+
 			if ( is_file( $file ) )
 			{
 				include $file;
@@ -240,7 +262,7 @@ class TauDb
 		$this->server = new TauDbServer($database, $user, $pass, $host, $port);
 		return self::init($engine, $this->server);
 	}
-	
+
 
 	/**
 	 * @abstract
@@ -418,11 +440,11 @@ class TauDb
 		return "''";
 	}
 
-	
-	
+
+
 	/**
 	 * Convert a PHP value to an integer suitable for use in SQL query
-	 * 
+	 *
 	 * @param int $value
 	 * @return int
 	 */
@@ -431,12 +453,12 @@ class TauDb
 		return intval($value);
 	}
 
-	
-	
+
+
 	/**
 	 * Convert a PHP value to a boolean value suitable for use in SQL query.
 	 * @param bool $value
-	 * @return 
+	 * @return
 	 */
 	public function boolean($value)
 	{
@@ -444,11 +466,11 @@ class TauDb
 	}
 
 
-	
+
 	/**
 	 * Encode a string into a string suitable for use in a SQL statement,
 	 * including proper escaping and quotations around value.
-	 * 
+	 *
 	 * @param type $string
 	 * @return string
 	 */
@@ -471,7 +493,7 @@ class TauDb
 	}
 
 
-	
+
 	/**
 	 * Return a field name in SQL format
 	 *
@@ -482,8 +504,8 @@ class TauDb
 	{
 		return $this->dbTableName($fieldName);
 	}
-	
-	
+
+
 
 	/**
 	 * Create SQL for an INSERT statement
@@ -498,11 +520,11 @@ class TauDb
 		{
 			return;
 		}
-		
-		if (is_array(reset($data))) 
+
+		if (is_array(reset($data)))
 		{
 			return $this->insertMultiSql($table, $data);
-		}		
+		}
 
 		$table = $this->tableName($table);
 		$fieldNames = $values = array();
@@ -518,7 +540,7 @@ class TauDb
 	}
 
 
-	
+
 	/**
 	 * Create SQL for a multi-row INSERT statement
 	 *
@@ -533,13 +555,13 @@ class TauDb
 		{
 			return;
 		}
-		
+
 
 		$table = $this->tableName($table);
 		$fieldNames = $values = $parts = array();
 		$record_number = 0;
-		
-		foreach ($data AS $record) 
+
+		foreach ($data AS $record)
 		{
 			$values = array();
 			$record_number++;
@@ -549,7 +571,7 @@ class TauDb
 				{
 					$fieldNames[] = $this->fieldName($fieldName);
 					$values[] = $this->escape($value);
-				}				
+				}
 			}
 			else
 			{
@@ -557,18 +579,18 @@ class TauDb
 				{
 					$values[] = $this->escape($value);
 				}
-				
+
 			}
 			$parts[] = '(' . implode(', ', $values) . ')';
 		}
-		
+
 		$sql = 'INSERT INTO ' . $table . ' (' . implode(', ', $fieldNames) . ') ';
 		$sql .= 'VALUES ' . implode(',', $parts);
 
 		return $sql;
 	}
-	
-	
+
+
 
 	/**
 	 * Create SQL for an UPDATE statement
@@ -616,8 +638,8 @@ class TauDb
 		return $sql;
 	}
 
-	
-	
+
+
 	/**
 	 * Create a WHERE string for SQL statement. If an array is passed in, the WHERE
 	 * is constructed based on the key and value pairs of the array and ANDed together.
@@ -645,18 +667,52 @@ class TauDb
 		}
 
 		$string = array();
+
 		if (is_array($where))
 		{
-			foreach ($where AS $key => $value)
+			$w = reset($where);
+
+			if ( is_array( $w ) )
 			{
-				$string[] = $this->fieldName($key) . ' = ' . $this->escape($value);
+				$string = array(
+					'(',
+					$this->dbFieldName( $w[ 'field' ] ),
+					$w[ 'comparison' ],
+					$this->escape( $w[ 'value' ] ),
+				);
+
+				while ( $w = next($where) )
+				{
+					if ($w['or']) {
+						$string[] = ') OR (';
+					} else {
+						$string[] = 'AND';
+					}
+
+					$string[] = $this->dbFieldName( $w[ 'field' ] );
+					$string[] = $w[ 'comparison' ];
+					$string[] = $this->escape( $w[ 'value' ] );
+				}
+				$string[] = ')';
+				if ($includeKeyword)
+				{
+					return ' WHERE ' . implode(' ' , $string);
+				}
+				return implode(' ', $string);
 			}
+			else
+			{
+				foreach ($where AS $key => $value)
+				{
+					$string[] = $this->fieldName($key) . ' = ' . $this->escape($value);
+				}
+			}
+			if ($includeKeyword)
+			{
+				return ' WHERE ' . implode(' AND ' , $string);
+			}
+			return implode(' AND ', $string);
 		}
-		if ($includeKeyword)
-		{
-			return ' WHERE ' . implode(' AND ' , $string);
-		}
-		return implode(' AND ', $string);
 	}
 
 
@@ -671,7 +727,6 @@ class TauDb
 	 * @return string
 	 *
 	 * @examples
-	 * @examples
 	 * // SQL query for retrieving first 10 rows
 	 * echo $db->limitSql(10);
 	 * >>> LIMIT 10
@@ -684,27 +739,26 @@ class TauDb
 	 * echo $db->limiSql(5, 10);
 	 * >>> LIMIT 5, 10
 	 */
-	 */
-	public function limitSql($start, $limit = null) 
+	public function limitSql($start, $limit = null)
 	{
 		$start = intval($start);
-		
+
 		if (is_null($limit)) {
 			if (empty($start)) {
 				return ' ';
 			}
-			return ' LIMIT ' . $start;
+			return ' LIMIT ' . $start . ' ';
 		}
-		
-		
+
+
 		$limit = intval($limit);
 		if (empty($start)) {
-			return ' LIMIT ' . $limit;
+			return ' LIMIT ' . $limit . ' ';
 		}
-		
-		return ' LIMIT ' . $start . ', ' . $limit;
+
+		return ' LIMIT ' . $start . ', ' . $limit . ' ';
 	}
-	
+
 
 
 	/**
@@ -712,23 +766,39 @@ class TauDb
 	 *
 	 * @param any $value
 	 * @return any
-	 */	
+	 */
+
 	public function escape($value)
 	{
 		if (is_null($value))                       return $this->nullValue();
 		if ($value === 'NOW()')                    return $this->now();
 		if ($value instanceof TauSqlExpression)    return $value->get();
 		if (is_string($value))                     return $this->dbStringify($value);
-		if (is_float($value))                      return $value;
+		if (is_float($value))					   return $value;
 		if (is_integer($value))                    return $this->integer($value);
 		if (is_bool($value))                       return $this->boolean($value);
 
-		if (is_array($value)) 
+		if (is_array($value))
 		{
 			return '(' . implode(', ', array_map(array($this, 'escape'), $value)) . ')';
 		}
 
 		return $this->emptyValue();
+	}
+
+
+
+	/**
+	 * Remove a chache entry for a particular SQL statement
+	 *
+	 * @param string $sql
+	 */
+	public function uncache($sql)
+	{
+		if ($this->cache)
+		{
+			$this->cache->queryRemove($sql);
+		}
 	}
 
 
@@ -740,8 +810,12 @@ class TauDb
 	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return handle
 	 */
-	public function select($sql, $expires = 0)
+	public function select($sql = null, $expires = 0)
 	{
+		if (is_null($sql)) {
+			$sql = $this->sql();
+		}
+		echo $sql;
 		$query = array(
 			'sql' => $sql,
 			'start' => microtime(true),
@@ -843,19 +917,19 @@ class TauDb
 
 		// Check if this is a cached object
 		if (is_int($resultSet))
-		{			
+		{
 			 $row = $this->cache->queryFetch($resultSet);
 		}
 		else
 		{
-			$row = $this->dbFetch($resultSet);		
+			$row = $this->dbFetch($resultSet);
 		}
 
-		if ($row) 
+		if ($row)
 		{
 			return $row;
 		}
-		
+
 		return false;
 	}
 
@@ -892,9 +966,14 @@ class TauDb
 	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array|false
 	 */
-	public function fetchOne($sql, $expires = 0)
+	public function fetchOne($sql = null, $expires = 0)
 	{
-		if (is_string($sql))
+		if (is_null($sql))
+		{
+			$this->limit(1);
+			$resultSet = $this->select(null, $expires);
+		}
+		else if (is_string($sql))
 		{
 			if (stripos('limit', substr($sql, -12)) === false)
 			{
@@ -924,9 +1003,14 @@ class TauDb
 	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array|false
 	 */
-	public function fetchOneObject($sql, $expires = 0)
+	public function fetchOneObject($sql = null, $expires = 0)
 	{
-		if (is_string($sql))
+		if (is_null($sql))
+		{
+			$this->limit(1);
+			$resultSet = $this->select(null, $expires);
+		}
+		else if (is_string($sql))
 		{
 			if (stripos('limit', substr($sql, -12)) === false)
 			{
@@ -957,9 +1041,9 @@ class TauDb
 	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array An array of records retrieved, each record as an object.
 	 */
-	public function fetchAllObject($sql, $expires = 0)
+	public function fetchAllObject($sql = null, $expires = 0)
 	{
-		if (is_string($sql))
+		if (is_string($sql) || is_null($sql))
 		{
 			$resultSet = $this->select($sql, $expires);
 		}
@@ -994,9 +1078,9 @@ class TauDb
 	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array
 	 */
-	public function fetchAll($sql, $expires = 0)
+	public function fetchAll($sql = null, $expires = 0)
 	{
-		if (is_string($sql))
+		if (is_string($sql) || is_null($sql))
 		{
 			$resultSet = $this->select($sql, $expires);
 		}
@@ -1019,7 +1103,7 @@ class TauDb
 	}
 
 
-	
+
 	/**
 	 * Retrieve all rows from an SQL query indexed by ID
 	 *
@@ -1028,9 +1112,9 @@ class TauDb
 	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array
 	 */
-	public function fetchAllWithId($sql, $id = '', $expires = 0)
+	public function fetchAllWithId($sql = null, $id = '', $expires = 0)
 	{
-		if (is_string($sql))
+		if (is_string($sql) || is_null($sql))
 		{
 			$resultSet = $this->select($sql, $expires);
 		}
@@ -1055,16 +1139,16 @@ class TauDb
 
 
 	/**
-	 * Fetch pairs from the database. First value in result set is used as 
+	 * Fetch pairs from the database. First value in result set is used as
 	 * array key and second value in result set is set as value.
 	 *
 	 * @param String $sql
 	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array
 	 */
-	public function fetchPairs($sql, $expires = 0)
+	public function fetchPairs($sql = null, $expires = 0)
 	{
-		if (is_string($sql))
+		if (is_string($sql) || is_null($sql))
 		{
 			$resultSet = $this->select($sql, $expires);
 		}
@@ -1093,9 +1177,9 @@ class TauDb
 	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array
 	 */
-	public function fetchColumn($sql, $expires = 0)
+	public function fetchColumn($sql = null, $expires = 0)
 	{
-		if (is_string($sql))
+		if (is_string($sql) || is_null($sql))
 		{
 			$resultSet = $this->select($sql, $expires);
 		}
@@ -1124,7 +1208,7 @@ class TauDb
 	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return mixed
 	 */
-	public function fetchValue($sql, $expires = 0)
+	public function fetchValue($sql = null, $expires = 0)
 	{
 		$row = $this->fetchOne($sql, $expires);
 		if (is_array($row))
@@ -1137,21 +1221,6 @@ class TauDb
 
 
 
- 	/**
-	 * Remove a chache entry for a particular SQL statement
-	 *
-	 * @param string $sql
-	 */
-	public function uncache($sql)
-	{
-		if ($this->cache)
-		{
-			$this->cache->queryRemove($sql);
-		}
-	}
-
-	
-
 	/**
 	 * Insert data in to a table
 	 *
@@ -1163,6 +1232,7 @@ class TauDb
 		$sql = $this->insertSql($table, $data);
 		$this->query($sql);
 	}
+
 
 
 	/**
@@ -1204,28 +1274,6 @@ class TauDb
 	{
 		return $this->inSetSql($field, $set, $negate);
 	}
-
-
-
-	/**
-	 * Create a WHERE string for SQL statement. If an array is passed in, the WHERE
-	 * is constructed based on the key and value pairs of the array and ANDed together.
-	 * If a string is passed in, it is just returned, possibly with WHERE prepended
-	 * if needed.
-	 *
-	 * @param string|array $where
-	 * @return string
-	 *
-	 * @examples
-	 * $db->where('where id = 1 AND class = 4);
-	 * $db->where('id = 1 AND class = 4');
-	 * $db->where(array('id' => 1, 'class' => 4));
-	 */
-	public function where($where, $includeKeyword = true)
-	{
-		return $this->whereSql($where, $includeKeyword);
-	}
-	
 
 
 
@@ -1295,6 +1343,191 @@ class TauDb
 	public function setWriteDatabase($db)
 	{
 		$this->writeDb = $db;
+	}
+
+
+
+	//
+	// A little, not very functional, SELECT query builder
+	//
+	// $db
+	//	->fields(array('key', 'name'))
+	//	->from('aops_config')
+	//	->where('id >', 1)
+	//	->where('key', 3)
+	//	->or_where('value', 'piggy')
+	//	->limit(1);
+	// echo $db->sql();
+	// >>> SELECT `key`, `name`
+	//  FROM aops_config
+	//  WHERE ( `id` > 1 AND `key` = 3 ) OR ( `value` = 'piggy' )
+	//  LIMIT 1
+	//
+
+	private $from = '';
+	private $fields = '';
+	private $where = array();
+	private $limit = '';
+
+
+	/**
+	 * Sets the table name for queries.
+	 * @param string $table
+	 * @return \TauDb
+	 */
+	public function from( $table ) {
+		$this->from = $table;
+
+		return $this;
+	}
+
+
+	/**
+	 * Sets LIMIT statement of SQL query
+	 * @param int $limit
+	 * @param int $start
+	 * @return \TauDb
+	 */
+	public function limit( $limit, $start = 0 ) {
+		$limit = intval($limit);
+		$start = intval($start);
+
+		if ( $start ) {
+			$this->limit = " LIMIT " . $start . ", " . $limit . " ";
+		} else {
+			$this->limit = " LIMIT " . $limit . " ";
+		}
+
+		return $this;
+	}
+
+
+
+	/**
+	 * Parse a WHERE field name separating it from comparison operator if provided
+	 * @param string $field Field name
+	 * @return array
+	 */
+	private function parse_where( $field ) {
+		$parts = explode( ' ', $field );
+		if ( sizeof( $parts ) == 1 ) {
+			return array( $field, '=' );
+		}
+		return $parts;
+	}
+
+
+
+	/**
+	 * Sets a WHERE parameter
+	 * @param string $field Field name. Can also include comparison operator.
+	 * @param mixed $value
+	 * @return \TauDb
+	 */
+	public function where( $field, $value ) {
+		$parse = $this->parse_where( $field );
+
+		$this->where[] = array(
+			'field' => $parse[ 0 ],
+			'comparison' => $parse[ 1 ],
+			'or' => false,
+			'value' => $value
+		);
+
+		return $this;
+	}
+
+
+	/**
+	 * Sets a WHERE parameter prefixed by OR
+	 * @param string $field Field name. Can also include comparison operator.
+	 * @param mixed $value
+	 * @return \TauDb
+	 */
+	public function or_where( $field, $value ) {
+		$parse = $this->parse_where( $field );
+
+		$this->where[] = array(
+			'field' => $parse[ 0 ],
+			'comparison' => $parse[ 1 ],
+			'or' => sizeof($this->where) > 0,
+			'value' => $value
+		);
+
+		return $this;
+	}
+
+
+
+	/**
+	 * Set the list of fields for SELECT query. May be string or array. If doing
+	 * fancy stuff, i.e., anything other than plain field names, use a string.
+	 *
+	 * @param string|array $fields List of fields
+	 * @return \TauDb
+	 */
+	public function fields( $fields ) {
+		if ( is_array( $fields ) )
+		{
+			$fields = array_map(array($this, 'dbFieldName'), $fields);
+			$this->fields = ' ' . implode(', ', $fields) . ' ';
+		}
+		else
+		{
+			$this->fields = " " . $fields . " ";
+		}
+
+		return $this;
+	}
+
+
+	/**
+	 * Builds the SELECT query
+	 *
+	 * @param string $table
+	 * @param int $limit
+	 * @param int $start
+	 * @return string
+	 */
+	public function sql($table = '', $limit = 0, $start = 0)
+	{
+		$limit = intval($limit);
+		$start = intval($start);
+		$fields = " * ";
+		if ( $this->fields ) {
+			$fields = $this->fields;
+		}
+
+		if ( empty( $table ) ) {
+			if ( empty( $this->from ) ) {
+				return '';
+			}
+			$sql = "SELECT" . $fields . "\n  FROM " . $this->from;
+		} else {
+			$sql = "SELECT" . $fields . "\n  FROM " . $table;
+		}
+
+		if (sizeof($this->where))
+		{
+			$sql .= "\n WHERE " . $this->whereSql($this->where, false);
+		}
+
+		if ($limit) {
+			if ($start) {
+				$sql .= "\n LIMIT " . $start . ", " . $limit;
+			} else {
+				$sql .= "\n LIMIT " . $limit;
+			}
+		} else if ($this->limit) {
+			$sql .= "\n" . $this->limit;
+		}
+
+		$this->from = '';
+		$this->fields = '*';
+		$this->where = array();
+		$this->limit = '';
+
+		return $sql;
 	}
 }
 
