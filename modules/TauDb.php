@@ -549,7 +549,7 @@ class TauDb
 	 */
 	public function insertMultiSql($table, $data)
 	{
-		if (!is_array($data) || !is_array($data[0]) || sizeof($data) < 1)
+		if (!is_array($data) || sizeof($data) < 1)
 		{
 			return;
 		}
