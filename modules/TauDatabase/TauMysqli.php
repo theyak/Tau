@@ -59,7 +59,7 @@ class TauMysqli extends TauDb
 					$message = array(
 						'Unable to connect to database. The database server is either down ',
 						'or an invalid username and password combination was supplied.<br><br>',
-						'You will need to grant access to the database for user ' . $dbuser,
+						'You will need to grant access to the database for user ' . $this->server->username,
 						' with something like:<br><br>',
 						'&nbsp;&nbsp;&nbsp;&nbsp;GRANT ALL ON ' . $this->server->database . 
 						'.* TO ' . $this->server->username,
