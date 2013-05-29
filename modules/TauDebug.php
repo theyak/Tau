@@ -25,7 +25,7 @@ class TauDebug
 			$line = $dbg[0]['line'];
 			unset($dbg);
 		}
-		TAU::dump($message, $line, $file);
+		Tau::dump($message, $line, $file);
 	}
 	
 	public static function debug_backtrace()

@@ -92,9 +92,9 @@ class TauValidate
 	*						Supported types are: MX (default), A, AAAA, NS, TXT, CNAME
 	*						Other types may work or may not work
 	*
-	* @return mixed		true if entry found,
-	*					false if entry not found,
-	*					null if this function is not supported by this environment
+	* @return mixed  true if entry found,
+	*                false if entry not found,
+	*                null if this function is not supported by this environment
 	*
 	* Since null can also be returned, you probably want to compare the result
 	* with === true or === false,

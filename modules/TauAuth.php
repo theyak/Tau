@@ -3,10 +3,10 @@
  * Aith Module For TAU
  * Contains helper routines for authorizing users
  *
- * @Author          theyak
- * @Copyright       2012
+ * @Author	    theyak
+ * @Copyright	    2012
  * @Project Page    None!
- * @docs            None!
+ * @docs	    None!
  *
  */
 
@@ -86,8 +86,8 @@ class TauAuth
 		$crawlers = array(
 			'googlebot',
 			'yahoo',
-            'bingbot',
-            'adsbot',
+			'bingbot',
+			'adsbot',
 			'slurp',
 			'yammybot',
 			'openbot',
@@ -100,7 +100,7 @@ class TauAuth
 			'teoma',
 			'gigabot',
 			'yandexbot',
-            'sosospider',
+			'sosospider',
 		);
 
 		// Use instead of stripos which is far slower than strpos

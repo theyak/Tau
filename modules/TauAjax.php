@@ -34,22 +34,22 @@ class TauAjax
 	}
 
 
-	
+
 	/**
 	 * Send text data.
-	 * 
+	 *
 	 * @param type $string
 	 */
 	public static function send_string($string)
 	{
 		self::send_text($string);
 	}
-	
 
-	
+
+
 	/**
 	 * Send text data.
-	 * 
+	 *
 	 * @param type $string
 	 */
 	public static function send_text($string)
@@ -59,10 +59,10 @@ class TauAjax
 		header('Content-Disposition: inline; filename="file.txt"');
 		header('X-Content-Type-Options: nosniff');
 		header('Content-Type: text/plain');
-	    echo $string;
-		exit;		
+		echo $string;
+		exit;
 	}
-	
+
 	
 	
 	/**

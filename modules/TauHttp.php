@@ -16,7 +16,7 @@
  * Example Usage:
 $http = new TauHttp('https://www.duckduckgo.com');
 $http->setProxyHost('127.0.0.1');
-$http->setProxyPort(9050);
+$http->setProxyPort(8080);
 $http->setProxyType(CURLPROXY_SOCKS5);
 $http->setPostField('q', 'google');
 Tau::dump($http->fetch());

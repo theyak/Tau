@@ -20,7 +20,7 @@ class TauCache
 	 * Referecnce to cache engine driver
 	 */
 	public $driver;
-	
+
 
 	/**
 	 * Loaded cached queries
@@ -37,7 +37,7 @@ class TauCache
 	 */
 	private $queryNumber = 0;
 
-	
+
 	function __construct($engine)
 	{
 		// Check for valid engine
@@ -60,54 +60,73 @@ class TauCache
 		// Instantiate driver
 		$this->driver = new $className($this);
 	}
-	
-	function connect()
+
+
+
+	public function connect()
 	{
 		$this->driver->connect(func_get_args());
 	}
-	
-	function set($key, $value, $expires = 3600)
+
+
+
+	public function set($key, $value, $expires = 3600)
 	{
 		$this->driver->set($key, $value, $expires);
 	}
-	
-	function add($key, $value, $expires = 3600)
+
+
+
+	public function add($key, $value, $expires = 3600)
 	{
-		if (!$this->driver->exists($key)) {
+		if (!$this->driver->exists($key))
+		{
 			$this->driver->set($key, $value, $expires);
 		}
 	}
-	
-	function get($key)
+
+
+
+	public function get($key)
 	{
 		return $this->driver->get($key);
 	}
-	
-	function exists($key)
+
+
+
+	public function exists($key)
 	{
 		return $this->driver->exists($key);
 	}
-	
-	function remove($key)
+
+
+
+	public function remove($key)
 	{
 		return $this->driver->remove($key);
 	}
-	
-	function incr($key)
+
+
+
+	public function incr($key)
 	{
 		$value = $this->driver->get($key);
-		if (is_int($value)) {
+		if (is_int($value))
+		{
 			$value++;
 			$this->driver->set($key, $value);
 			return $value;
 		}
 		return false;
 	}
-	
-	function decr($key)
+
+
+
+	public function decr($key)
 	{
 		$value = $this->driver->get($key);
-		if (is_int($value)) {
+		if (is_int($value))
+		{
 			$value--;
 			$this->driver->set($key, $value);
 			return $value;
@@ -118,28 +137,31 @@ class TauCache
 
 
 
-	function queryFetch($queryNumber) 
+	public function queryFetch($queryNumber)
 	{
-		if (!isset($this->queries[$queryNumber]) || !isset($this->queryIndex[$queryNumber])) {
+		if (!isset($this->queries[$queryNumber]) || !isset($this->queryIndex[$queryNumber]))
+		{
 			return false;
 		}
-		
+
 		$index = $this->queryIndex[$queryNumber];
-		if (!isset($this->queries[$queryNumber][$index])) {
+		if (!isset($this->queries[$queryNumber][$index]))
+		{
 			return false;
 		}
-		
+
 		return $this->queries[$queryNumber][$this->queryIndex[$queryNumber]++];
 	}
 
 
 
-	function queryLoad($query)
+	public function queryLoad($query)
 	{
 		$query = preg_replace('/[\n\r\s\t]+/', ' ', $query);
 		$key = 'sql/' . md5($query);
 		$rows = $this->driver->get($key);
-		if ($rows === false) {
+		if ($rows === false)
+		{
 			return false;
 		}
 		$this->queries[$this->queryNumber] = $rows;
@@ -149,25 +171,25 @@ class TauCache
 
 
 
-	function querySave($db, $resultSet, $query, $ttl)
+	public function querySave($db, $resultSet, $query, $ttl)
 	{
 		$this->driver->setNote($query);
 		while ($row = $db->fetch($resultSet))
 		{
 			$this->queries[$this->queryNumber][] = $row;
 		}
-		
+
 		$query = preg_replace('/[\n\r\s\t]+/', ' ', $query);
 		$key = 'sql/' . md5($query);
 		$this->driver->set($key, $this->queries[$this->queryNumber], $ttl);
 		$this->queryIndex[$this->queryNumber] = 0;
-		
+
 		return $this->queryNumber++;
 	}
 
 
 
-	function queryRemove($query)
+	public function queryRemove($query)
 	{
 		$query = preg_replace('/[\n\r\s\t]+/', ' ', $query);
 		$key = 'sql/' . md5($query);
@@ -176,20 +198,24 @@ class TauCache
 
 
 
-	function freeResult($resultSet) {
+	public function freeResult($resultSet) {
 		unset($this->queries[$resultSet]);
 		unset($this->queryIndex[$resultSet]);
 	}
-	
-	function getResults($resultSet) {
-		if (isset($this->queries[$resultSet])) {
+
+
+
+	public function getResults($resultSet) {
+		if (isset($this->queries[$resultSet]))
+		{
 			return $this->queries[$resultSet];
 		}
 		return false;
 	}
 
-	function getResultsWithId($resultSet, $id = '')
-	{
+
+
+	public function getResultsWithId($resultSet, $id = '') {
 		if (isset($this->queries[$resultSet]))
 		{
 			$result = array();
@@ -207,5 +233,4 @@ class TauCache
 		}
 		return false;
 	}
-
 }
