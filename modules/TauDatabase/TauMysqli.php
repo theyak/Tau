@@ -25,6 +25,13 @@ class TauMysqli extends TauDb
 	 */
 	private $resultSet;
 	
+	/**
+	 * Last query
+	 * @param string $query
+	 */
+	private $query = '';
+	
+	
 	function __construct($server)
 	{
 		$this->server = $server;
@@ -125,6 +132,7 @@ class TauMysqli extends TauDb
 	 */
 	public function dbQuery($sql)
 	{
+		$this->query = $sql;
 		$this->resultSet = mysqli_query($this->server->connection, $sql);
 		return $this->resultSet;
 	}
@@ -153,10 +161,16 @@ class TauMysqli extends TauDb
 
 
 
+	/**
+	 * Retrieve last error
+	 * @return string
+	 */
 	public function dbError()
 	{
-		return @mysqli_error();
+		return "SQL: " . $this->query . "<br><br>" .
+			"Error: " . mysqli_error($this->server->connection);
 	}
+
 
 
 	/**
