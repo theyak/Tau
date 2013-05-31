@@ -849,7 +849,7 @@ class TauDb
 		$query['time'] = $query['end'] - $query['start'];
 		$this->queries[] = $query;
 
-		if ($this->terminateOnError && $this->dbError())
+		if ($this->resultSet === false && $this->terminateOnError)
 		{
 			TauError::fatal($this->dbError(), $this->extendedDebug);
 		}
@@ -884,7 +884,7 @@ class TauDb
 		);
 
 		$this->connect();
-		$this->dbQuery($sql);
+		$resultSet = $this->dbQuery($sql);
 
 		$query['end'] = microtime(true);
 		$query['time'] = $query['end'] - $query['start'];
@@ -892,7 +892,7 @@ class TauDb
 
 		$this->db->queries[] = $query;
 
-		if ($this->terminateOnError && $this->dbError())
+		if ($resultSet === false && $this->terminateOnError)
 		{
 			TauError::fatal($this->dbError(), $this->extendedDebug);
 		}
