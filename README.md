@@ -6,9 +6,9 @@ how you code. Yay!
 
 I mentioned small, right?
 
-As of July 2013, it comes in at a whopping 149K. That's K, as in Kilobytes. As a comparison, one of my favorite
-small frameworks is a bit larger, at 103M, when it and its dependencies are installed. That's M, as in Megabytes.
-And in all honesty, it doesn't do a whole lot more than Tau!
+As of July 2013, it comes in at a whopping 149K. That's K, as in Kilobytes. As a comparison, one of my favorite, and 
+most popular small frameworks is a bit larger, at 103M, when it and its dependencies (parts of Symphony, Doctrine, etc.)
+are installed. That's M, as in Megabytes. And in all honesty, it doesn't do a whole lot more than Tau!
 
 Granted, there are some things that the aforementioned, unnamed framework can do that Tau can not. Some things
 were kept out simply because I already use other libraries (e.g., Slim and uLogin for routing and user authentication
