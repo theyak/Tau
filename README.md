@@ -19,7 +19,6 @@ That doesn't mean Tau is done. Nope, not at all. Some things I'd like to do in t
 * Improve Validate module
 * Improve Debug module
 * Implement Config module
-* Implement Queue module
 * Better docblocks
 * Standardize code
 * Get married
