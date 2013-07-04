@@ -1,7 +1,12 @@
 <?php
 /**
- * Aith Module For TAU
- * Contains helper routines for authorizing users
+ * Auth Module For TAU
+ * Contains helper routines for authorizing users.
+ * We did try to build in an authorization system but we couldn't think
+ * of anything generic enough to work. Everything required the use of
+ * a database and at least two tables, both set up in specific ways.
+ * As Tau is meant to be generic, we have opted to not include a full
+ * authorization module and leave it to the developer to develop.
  *
  * @Author	    theyak
  * @Copyright	    2012
@@ -17,6 +22,7 @@ if (!defined('TAU'))
 
 class TauAuth
 {
+		
 	/**
 	 * Get IP address of user.
 	 *
