@@ -30,4 +30,4 @@ Installation
 ============
 Download the zip, uncompress it to your includes directory, and include "Tau.php."
 
-Someday I may add it to composer, but meh.
+Someday I may add it to composer, but I want to make it more full featured before doing that.
