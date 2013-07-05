@@ -2,6 +2,8 @@
 /**
  * Cookie module for TAU
  *
+ * This module is deprecated in favor of TauCookie.
+ * 
  * @Author          theyak
  * @Copyright       2011
  * @Project Page    None!
