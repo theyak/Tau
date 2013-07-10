@@ -114,6 +114,7 @@ class TauMysql extends TauDb
 	 */
 	public function dbQuery($sql)
 	{
+		$this->connect();
 		return @mysql_query($sql, $this->server->connection);
 	}
 
