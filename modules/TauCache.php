@@ -35,7 +35,7 @@ class TauCache
 	/**
 	 * Query number to be used as index for $queries
 	 */
-	private $queryNumber = 0;
+	private $queryNumber = 1;
 
 
 	function __construct($engine)
