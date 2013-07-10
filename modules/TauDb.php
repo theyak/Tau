@@ -819,8 +819,6 @@ class TauDb
 			'start' => microtime(true),
 		);
 
-		$this->connect();
-
 		if ($this->cache && $expires > 0)
 		{
 			// Load from cache. If cache miss, select as regular and store in cache
@@ -883,7 +881,6 @@ class TauDb
 			'start' => microtime(true),
 		);
 
-		$this->connect();
 		$resultSet = $this->dbQuery($sql);
 
 		$query['end'] = microtime(true);
