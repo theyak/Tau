@@ -132,6 +132,10 @@ class TauMysqli extends TauDb
 	 */
 	public function dbQuery($sql)
 	{
+		if (!$this->server->connection)
+		{
+			$this->connect();
+		}
 		$this->query = $sql;
 		$this->resultSet = mysqli_query($this->server->connection, $sql);
 		return $this->resultSet;
