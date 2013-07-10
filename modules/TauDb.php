@@ -825,7 +825,7 @@ class TauDb
 		{
 			// Load from cache. If cache miss, select as regular and store in cache
 			$query['cached'] = true;
-			$resultSet = $this->cache->queryLoad($sql);
+			$this->resultSet = $this->cache->queryLoad($sql);
 			if (!$this->resultSet)
 			{
 				$query['cached'] = false;
