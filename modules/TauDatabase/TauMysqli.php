@@ -333,7 +333,7 @@ class TauMysqli extends TauDb
 	 */
 	public function insertId()
 	{
-		return @mysqli_insert_id();
+		return @mysqli_insert_id($this->server->connection);
 	}
 
 
@@ -344,7 +344,7 @@ class TauMysqli extends TauDb
 	 */
 	public function affectedRows()
 	{
-		return @mysqli_affected_rows();
+		return @mysqli_affected_rows($this->server->connection);
 	}
 
 	
