@@ -4,8 +4,7 @@
  *
  * @Author          theyak
  * @Copyright       2011
- * @Project Page    None!
- * @Dependencies    TauError
+ * @Project Page    https://github.com/theyak/Tau
  * @Documentation   None!
  */
 
@@ -38,14 +37,14 @@ class TauCache
 	private $queryNumber = 1;
 
 
-	function __construct($engine)
+	function __construct($engine, $opts = array())
 	{
 		// Check for valid engine
-		$engines = array('file');
+		$engines = array( 'file', 'apc', 'null' );
 		$engine = strtolower($engine);
 		if (!in_array($engine, $engines))
 		{
-			TauError::fatal('Invalid cache engine. Supported engines are ' . implode(', ', $engines));
+			throw new Exception('Invalid cache engine. Supported engines are ' . implode(', ', $engines));
 		}
 
 		// Load driver for engine if needed
@@ -58,26 +57,19 @@ class TauCache
 		}
 
 		// Instantiate driver
-		$this->driver = new $className($this);
+		$this->driver = new $className($this, $opts);
 	}
 
 
 
-	public function connect()
-	{
-		$this->driver->connect(func_get_args());
-	}
-
-
-
-	public function set($key, $value, $expires = 3600)
+	public function set($key, $value, $ttl = 3600)
 	{
 		$this->driver->set($key, $value, $expires);
 	}
 
 
 
-	public function add($key, $value, $expires = 3600)
+	public function add($key, $value, $ttl = 3600)
 	{
 		if (!$this->driver->exists($key))
 		{
@@ -108,30 +100,16 @@ class TauCache
 
 
 
-	public function incr($key)
+	public function incr( $key, $step = 1 )
 	{
-		$value = $this->driver->get($key);
-		if (is_int($value))
-		{
-			$value++;
-			$this->driver->set($key, $value);
-			return $value;
-		}
-		return false;
+		return $this->driver->incr( $key );
 	}
 
 
 
-	public function decr($key)
+	public function decr( $key, $step = 1 )
 	{
-		$value = $this->driver->get($key);
-		if (is_int($value))
-		{
-			$value--;
-			$this->driver->set($key, $value);
-			return $value;
-		}
-		return false;
+		return $this->driver->incr( $key, -$step );
 	}
 
 
