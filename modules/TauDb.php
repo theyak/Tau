@@ -3,7 +3,7 @@
  * Database Module For TAU
  *
  * @Author          theyak
- * @Copyright       2012
+ * @Copyright       2013
  * @Project Page    https://github.com/theyak/Tau
  * @Dependencies    TauError, TauFS
  * @Documentation   None!
@@ -23,6 +23,8 @@
  *   1.0.0  Sep  8, 2012  Created
  *
  *   1.1.0  Apr 24, 2013  Added small, very limited, method chaining for SELECTs
+ *
+ *   1.1.1  Sep 29, 2013  Intialize $queries variable
  *
  *
  * ::init($engine, TauDbServer $server)
@@ -214,6 +216,14 @@ class TauDb
 	 */
 	private $writeDb = null;
 
+
+	/**
+	 * Log of queries containg SQL, time elapsed, etc.
+	 * @var Array
+	 */
+	protected $queries = array();
+
+
 	/**
 	 * Initializes a database connection
 	 *
@@ -221,7 +231,6 @@ class TauDb
 	 * @param TauDbServer $server
 	 * @return TauDb $engine
 	 */
-
 	public static function init( $engine, TauDbServer $server )
 	{
 		$engine = 'Tau' . ucfirst( $engine );
@@ -887,7 +896,7 @@ class TauDb
 		$query['time'] = $query['end'] - $query['start'];
 		$query['cached'] = false;
 
-		$this->db->queries[] = $query;
+		$this->queries[] = $query;
 
 		if ($resultSet === false && $this->terminateOnError)
 		{
