@@ -10,6 +10,8 @@
  * @Dependencies    TauError, TauFS
  * @Documentation   None!
  *
+ * changelog:
+ *   2013-09-29  Do not use class_exists for auto-loader. hiphop-php does not support.
  */
 
 if (!defined('TAU'))
@@ -90,6 +92,9 @@ class Tau
 	 */
 	public static function module($module, $exception = true)
 	{
+		// hiphop-php does not support class_exists, so use this instead
+		static $modules = array();
+
 		$path = self::$root_path . 'modules' . DIRECTORY_SEPARATOR;
 
 		// If prefix isn't Tau, then it isn't a Tau module.
@@ -102,7 +107,7 @@ class Tau
 		}
 
 		// Check if module has already been loaded. If so, do nothing.
-		if (class_exists($module))
+		if (isset($modules[$module]))
 		{
 			return;
 		}
@@ -120,6 +125,7 @@ class Tau
 		}
 
 		include $path . $module . '.php';
+		$modules[$module] = $path . $module . '.php';
 	}
 
 	/* Ultra-common utilitiy methods */
