@@ -10,6 +10,7 @@
  *
  * changelog:
  *   1.0.0  Sep  8, 2012  Created
+ *   1.0.1  Sep 29, 2013  Make sure connection before query
  */
 
 if (!defined('TAU'))
@@ -19,6 +20,19 @@ if (!defined('TAU'))
 
 class TauMysql extends TauDb
 {
+	/**
+	 * Reference to most recent result set
+	 * @var resource
+	 */
+	private $resultSet;
+
+	/**
+	 * Last query
+	 * @param string $query
+	 */
+	private $query = '';
+
+
 	function __construct($server)
 	{
 		$this->server = $server;
@@ -114,8 +128,13 @@ class TauMysql extends TauDb
 	 */
 	public function dbQuery($sql)
 	{
-		$this->connect();
-		return @mysql_query($sql, $this->server->connection);
+		if (!$this->server->connection)
+		{
+			$this->connect();
+		}
+		$this->query = $sql;
+		$this->resultSet = @mysql_query($sql, $this->server->connection);
+		return $this->resultSet;
 	}
 
 
@@ -157,17 +176,17 @@ class TauMysql extends TauDb
 	public function dbFieldName($fieldName)
 	{
 		$this->connect();
-		
+
 		$parts = explode('.', $fieldName);
 		foreach($parts AS $key => $value) {
 			$parts[$key] = '`' . @mysql_real_escape_string(trim($value, '`')) . '`';
 		}
-		
+
 		return implode('.', $parts);
 	}
 
 
-	
+
 	/**
 	 * Convert a PHP string into an SQL table name
 	 *
@@ -178,7 +197,7 @@ class TauMysql extends TauDb
 	{
 		return $this->dbFieldName($tableName);
 	}
-	
+
 
 	/**
 	 * Convert a PHP string value to a string value suitable for insertion in to SQL query.
@@ -197,7 +216,7 @@ class TauMysql extends TauDb
 		}
 	}
 
-	
+
 
 	/**
 	 * Escape a string for insertion in to database
@@ -226,14 +245,14 @@ class TauMysql extends TauDb
 	/**
 	 * Fetch a row from the database as on object
 	 * @param handle $resultSet
-	 * @return assoc|false 
+	 * @return assoc|false
 	 */
 	protected function dbFetchObject($resultSet)
 	{
 		return @mysql_fetch_object($resultSet);
 	}
-	
-	
+
+
 
 	/**
 	 * Fetch all rows from the database
@@ -247,14 +266,14 @@ class TauMysql extends TauDb
 		{
 			$rows[] = $row;
 		}
-		
+
 		return $rows;
 	}
 
 
 	/**
 	 * Retrieve all rows, each row as an object, from an SQL query
-	 * 
+	 *
 	 * @param handle $resultSet
 	 * @return assoc An array of records retrieved, each record as an object.
 	 */
@@ -267,8 +286,8 @@ class TauMysql extends TauDb
 		}
 		return $rows;
 	}
-	
-	
+
+
 
 	/**
 	 * Fetch all rows from the database storing data in an associative array
@@ -316,7 +335,7 @@ class TauMysql extends TauDb
 		return @mysql_affected_rows();
 	}
 
-	
+
 
 	/**
 	 * Get number of rows returned in last query
@@ -327,7 +346,7 @@ class TauMysql extends TauDb
 		return @mysql_num_rows($this->resultSet);
 	}
 
-	
+
 
 	/**
 	 * Determine if table exists in database
