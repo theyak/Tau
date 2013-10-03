@@ -26,6 +26,7 @@
  *
  *   1.1.1  Sep 29, 2013  Intialize $queries variable
  *
+ *   1.1.2  Oct  3, 2013  Add insertUpdate()
  *
  * ::init($engine, TauDbServer $server)
  *   Initialize a database connection
@@ -125,6 +126,10 @@
  * update($table, $values, $where)
  *   Update data in a table
  *
+ * insertUpdate($table, $values, $where)
+ *   Perform an insert-update operation, that is, update if row already
+ *   exists, otherwise insert.
+ * 
  * inSet($field, $set, $negate = false)
  *   Retrieve SQL for finding data in a set
  *
@@ -1253,7 +1258,8 @@ class TauDb
 
 
 	/**
-	 *
+	 * Update  a row or rows in a database table
+	 * 
 	 * @param string $table
 	 * @param array $values
 	 * @param string $where
@@ -1262,6 +1268,33 @@ class TauDb
 	{
 		$sql = $this->updateSql($table, $values, $where);
 		$this->query($sql);
+	}
+	
+	
+	
+	/**
+	 * Perform an "INSERT UPDATE". That is, update a record(s) if
+	 * exists, otherwise insert. MySQL supports this natively
+	 * but the native function reports warnings if replicating.
+	 * This doesn't throw warnings.
+	 * 
+	 * @param string $table
+	 * @param array $values
+	 * @param array|string $where
+	 */
+	public function insertUpdate($table, $values, $where)
+	{
+		$sql = "SELECT COUNT(*) FROM " . $this->tableName($table) . " " . $this->whereSql($where);
+		$count = $this->fetchValue($sql);
+		
+		if ($count > 0)
+		{
+			$this->update($table, $values, $where);
+		}
+		else
+		{
+			$this->insert($table, $values);
+		}
 	}
 
 
