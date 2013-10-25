@@ -189,7 +189,11 @@ class Tau
 		}
 		else if (is_array($message) || is_object($message))
 		{
+			$old_handler = set_error_handler( function( $errno ) {
+				;
+			} );
 			echo htmlspecialchars(print_r($message, true));
+			set_error_handler( $old_handler );
 		}
 		else
 		{
