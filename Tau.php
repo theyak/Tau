@@ -189,6 +189,8 @@ class Tau
 		}
 		else if (is_array($message) || is_object($message))
 		{
+			// An empty error handler is required for things such
+			// as result sets which do not work with print_r.
 			$old_handler = set_error_handler( function( $errno ) {
 				;
 			} );
