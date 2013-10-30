@@ -1076,6 +1076,12 @@ class TauDb
 		}
 		$this->freeResult($resultSet);
 
+		// Make sure we return an array
+		if ( empty( $rows ) )
+		{
+			return array();
+		}
+
 		return $rows;
 	}
 
@@ -1107,6 +1113,12 @@ class TauDb
 			$rows = $this->dbFetchAll($resultSet);
 		}
 		$this->freeResult($resultSet);
+
+		// Make sure we return an array
+		if ( empty( $rows ) )
+		{
+			return array();
+		}
 
 		return $rows;
 	}
