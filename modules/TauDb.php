@@ -126,7 +126,7 @@
  * update($table, $values, $where)
  *   Update data in a table
  *
- * insertUpdate($table, $values, $where)
+ * insertUpdate($table, $insert, $update, $where)
  *   Perform an insert-update operation, that is, update if row already
  *   exists, otherwise insert.
  * 
@@ -1291,21 +1291,33 @@ class TauDb
 	 * This doesn't throw warnings.
 	 * 
 	 * @param string $table
-	 * @param array $values
+	 * @param array $insert Data to use for insert. If empty, uses $update
+	 * @param array $update Data to use for update. If empty, uses $insert
 	 * @param array|string $where
 	 */
-	public function insertUpdate($table, $values, $where)
+	public function insertUpdate($table, $insert, $update, $where)
 	{
+		if ( (!is_array($insert) || sizeof($insert) === 0)  && is_array($update) )
+		{
+			$insert = $update;
+		}
+		
+		if ( (!is_array($update) || sizeof($update) === 0)  && is_array($insert) )
+		{
+			$update = $insert;
+		}
+	
+		
 		$sql = "SELECT COUNT(*) FROM " . $this->tableName($table) . " " . $this->whereSql($where);
 		$count = $this->fetchValue($sql);
 		
 		if ($count > 0)
 		{
-			$this->update($table, $values, $where);
+			$this->update($table, $update, $where);
 		}
 		else
 		{
-			$this->insert($table, $values);
+			$this->insert($table, $insert);
 		}
 	}
 
