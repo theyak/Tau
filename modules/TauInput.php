@@ -56,6 +56,59 @@ class TauInput
 		return (isset($_REQUEST[$field])) ? $_REQUEST[$field] : false;
 	}
 
+	// Boolean
+	// ---------------------------------------------------------------------------
+	static public function boolval( $value )
+	{
+		if ( (boolean) $value === false ) {
+			return false;
+		}
+
+		if ( is_string( $value ) )
+		{
+			$value = strtolower( $value );
+			if ( $value === 'no' || $value === 'false' || $value === '0' || $value == 'n' ) {
+				return false;
+			}
+		}
+
+		return (boolean) $value;
+	}
+
+
+	public static function boolean($fields, $default = false, $post_only = false)
+	{
+		if (!is_array($fields)) {
+			$fields = array($fields);
+		}
+
+		foreach ($fields AS $field)
+		{
+			$result = self::post($field);
+			if ($result !== false)
+			{
+				return static::boolval($result);
+			}
+
+			if (!$post_only)
+			{
+				$result = self::get($field);
+				if ($result !== false)
+				{
+					return static::boolval($result);
+				}
+
+				$result = self::cookie($field);
+				if ($result !== false)
+				{
+					return static::boolval($result);
+				}
+			}
+		}
+
+		return (boolean) $default;
+	}
+
 
 	// Integer
 	// ---------------------------------------------------------------------------
