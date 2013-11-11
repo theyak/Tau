@@ -27,6 +27,8 @@
  *   1.1.1  Sep 29, 2013  Intialize $queries variable
  *
  *   1.1.2  Oct  3, 2013  Add insertUpdate()
+ * 
+ *   1.1.3  Nov 11, 2013  Add $query_count and $query_time properties
  *
  * ::init($engine, TauDbServer $server)
  *   Initialize a database connection
@@ -126,7 +128,7 @@
  * update($table, $values, $where)
  *   Update data in a table
  *
- * insertUpdate($table, $insert, $update, $where)
+ * insertUpdate($table, $values, $where)
  *   Perform an insert-update operation, that is, update if row already
  *   exists, otherwise insert.
  * 
@@ -213,6 +215,18 @@ class TauDb
 	 */
 	public $extendedDebug = false;
 
+	
+	/**
+	 * Number of queries executed
+	 */
+	public $query_count = 0;
+	
+	
+	/**
+	 * Total time of all queries, in seconds with millisecond precision.
+	 */
+	public $query_time = 0;
+	
 
 	/**
 	 * Pointer to writable database. Used in master/slave setups
@@ -226,7 +240,7 @@ class TauDb
 	 * Log of queries containg SQL, time elapsed, etc.
 	 * @var Array
 	 */
-	protected $queries = array();
+	public $queries = array();
 
 
 	/**
@@ -833,7 +847,7 @@ class TauDb
 			'start' => microtime(true),
 		);
 
-		if ($this->cache && $expires > 0)
+		if ($this->cache && $expires)
 		{
 			// Load from cache. If cache miss, select as regular and store in cache
 			$query['cached'] = true;
@@ -842,6 +856,7 @@ class TauDb
 			{
 				$query['cached'] = false;
 				$resultSet = $this->dbQuery($sql);
+
 				if ($resultSet)
 				{
 					// Save query in cache
@@ -859,6 +874,9 @@ class TauDb
 
 		$query['end'] = microtime(true);
 		$query['time'] = $query['end'] - $query['start'];
+		$this->query_time += $query[ 'time' ];
+		$this->query_count ++;
+		
 		$this->queries[] = $query;
 
 		if ($this->resultSet === false && $this->terminateOnError)
@@ -900,6 +918,8 @@ class TauDb
 		$query['end'] = microtime(true);
 		$query['time'] = $query['end'] - $query['start'];
 		$query['cached'] = false;
+		$this->query_time += $query[ 'time' ];
+		$this->query_count ++;
 
 		$this->queries[] = $query;
 
@@ -1076,12 +1096,11 @@ class TauDb
 		}
 		$this->freeResult($resultSet);
 
-		// Make sure we return an array
 		if ( empty( $rows ) )
 		{
-			return array();
+			$rows = array();
 		}
-
+		
 		return $rows;
 	}
 
@@ -1114,12 +1133,11 @@ class TauDb
 		}
 		$this->freeResult($resultSet);
 
-		// Make sure we return an array
 		if ( empty( $rows ) )
 		{
-			return array();
+			$rows = array();
 		}
-
+		
 		return $rows;
 	}
 
