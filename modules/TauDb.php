@@ -243,6 +243,8 @@ class TauDb
 	public $queries = array();
 
 
+	private $error_handler = null;
+	
 	/**
 	 * Initializes a database connection
 	 *
@@ -278,18 +280,32 @@ class TauDb
 			}
 		}
 
-		return new $engine( $server );
+		$db = new $engine( $server );
+		$db->setErrorHandler( array( $db, 'defaultErrorHandler' ) );
+		
+		return $db;
 	}
 
-
-
-	public function __construct($engine, $user, $pass, $database, $host = '127.0.0.1', $port = 0)
+	
+	public function setErrorHandler( $callable ) 
 	{
-		$this->server = new TauDbServer($database, $user, $pass, $host, $port);
-		return self::init($engine, $this->server);
+		$this->error_handler = $callable;
 	}
+	
 
-
+	public function defaultErrorHandler( $sql, $error )
+	{
+		if ( $this->terminateOnError )
+		{
+			TauError::fatal($this->dbError(), $this->extendedDebug);
+		}
+		else if ( $this->throwError )
+		{
+			throw new \Exception( $this->dbError() );
+		}
+	}
+	
+	
 	/**
 	 * @abstract
 	 */
@@ -879,10 +895,11 @@ class TauDb
 		
 		$this->queries[] = $query;
 
-		if ($this->resultSet === false && $this->terminateOnError)
+		if ($this->resultSet === false)
 		{
-			TauError::fatal($this->dbError(), $this->extendedDebug);
+			call_user_func( $this->error_handler, $sql, $this->dbError() );
 		}
+		
 
 		return $this->resultSet;
 	}
@@ -923,9 +940,10 @@ class TauDb
 
 		$this->queries[] = $query;
 
-		if ($resultSet === false && $this->terminateOnError)
+		
+		if ($resultSet === false)
 		{
-			TauError::fatal($this->dbError(), $this->extendedDebug);
+			call_user_func( $this->error_handler, $sql, $this->dbError() );
 		}
 	}
 

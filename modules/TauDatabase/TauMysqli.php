@@ -50,7 +50,7 @@ class TauMysqli extends TauDb
 	function connect()
 	{
 		if (!$this->server->connection)
-		{;
+		{
 			$this->server->connection = mysqli_connect(
 				$this->server->host,
 				$this->server->username,
@@ -171,8 +171,7 @@ class TauMysqli extends TauDb
 	 */
 	public function dbError()
 	{
-		return "SQL: " . $this->query . "<br><br>" .
-			"Error: " . mysqli_error($this->server->connection);
+		return mysqli_error($this->server->connection);
 	}
 
 
@@ -344,7 +343,7 @@ class TauMysqli extends TauDb
 	 */
 	public function affectedRows()
 	{
-		return @mysqli_affected_rows($this->server->connection);
+		return @mysqli_affected_rows();
 	}
 
 	
