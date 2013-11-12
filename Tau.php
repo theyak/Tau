@@ -11,7 +11,7 @@
  * @Documentation   None!
  *
  * changelog:
- *   2013-09-29  Do not use class_exists for auto-loader. hiphop-php does not support.
+ *   1.0.1  2013-09-29  Do not use class_exists for auto-loader. hiphop-php does not support.
  */
 
 if (!defined('TAU'))
@@ -141,6 +141,14 @@ class Tau
 		return php_sapi_name() == 'cli';
 	}
 
+	
+	
+	public static function isAjax()
+	{
+		return
+			( defined( 'AJAX' ) && AJAX === true ) ||
+			( isset( $_SERVER[ 'HTTP_X_REQUESTED_WITH' ] ) && $_SERVER[ 'HTTP_X_REQUESTED_WITH'] === "XMLHttpRequest" );
+	}
 
 
 	/**
@@ -170,7 +178,7 @@ class Tau
 		}
 
 
-		if (Tau::isCli())
+		if (Tau::isCli() || Tau::isAjax() )
 		{
 			echo empty($title) ? '' : implode(' - ', $title) . Tau::$EOL;
 		}
@@ -202,7 +210,7 @@ class Tau
 			echo str_replace("\t", '&nbsp; &nbsp; ', htmlspecialchars($message));
 		}
 
-		if (Tau::isCli())
+		if (Tau::isCli() || Tau::isAjax() )
 		{
 			echo Tau::$EOL;
 		}

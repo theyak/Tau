@@ -29,6 +29,10 @@
  *   1.1.2  Oct  3, 2013  Add insertUpdate()
  * 
  *   1.1.3  Nov 11, 2013  Add $query_count and $query_time properties
+ * 
+ *   1.1.4  Nov 11, 2013  Ability to define own error function
+ * 
+ *   1.1.5  Nov 11, 2013  Use bcsub() and bcadd() for time computation
  *
  * ::init($engine, TauDbServer $server)
  *   Initialize a database connection
@@ -889,8 +893,17 @@ class TauDb
 		}
 
 		$query['end'] = microtime(true);
-		$query['time'] = $query['end'] - $query['start'];
-		$this->query_time += $query[ 'time' ];
+		
+		if ( function_exists( 'bcsub' ) )
+		{
+			$query['time'] = bcsub( $query['end'], $query[ 'start' ], 4 );
+			$this->query_time = bcadd( $this->query_time, $query['time'], 4 ); 
+		}
+		else
+		{
+			$query['time'] = $query['end'] - $query['start'];
+			$this->query_time += $query['time'];
+		}
 		$this->query_count ++;
 		
 		$this->queries[] = $query;
@@ -933,9 +946,17 @@ class TauDb
 		$resultSet = $this->dbQuery($sql);
 
 		$query['end'] = microtime(true);
-		$query['time'] = $query['end'] - $query['start'];
+		if ( function_exists( 'bcsub' ) )
+		{
+			$query['time'] = bcsub( $query['end'], $query[ 'start' ], 4 );
+			$this->query_time = bcadd( $this->query_time, $query['time'], 4 ); 
+		}
+		else
+		{
+			$query['time'] = $query['end'] - $query['start'];
+			$this->query_time += $query['time'];
+		}
 		$query['cached'] = false;
-		$this->query_time += $query[ 'time' ];
 		$this->query_count ++;
 
 		$this->queries[] = $query;
