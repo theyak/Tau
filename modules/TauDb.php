@@ -1776,20 +1776,6 @@ class TauDb
 
 		return $sql;
 	}
-
-	
-	
-	/**
-	 * Sets the file to log queries to
-	 * 
-	 * @param string|boolean $file Name of log file, or false to turn off
-	 * @param boolean $log_selects Flag indicating if SELECT statements should be logged
-	 */
-	public function setLog( $file, $log_selects = false) 
-	{
-		$this->log_file = $file;
-		$this->log_selects = (bool) $log_selects;
-	}
 }
 
 
