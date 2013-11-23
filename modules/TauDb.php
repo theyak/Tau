@@ -33,6 +33,8 @@
  *   1.1.4  Nov 11, 2013  Ability to define own error function
  * 
  *   1.1.5  Nov 11, 2013  Use bcsub() and bcadd() for time computation
+ * 
+ *   1.1.6  Nov 22, 2013  Add query events
  *
  * ::init($engine, TauDbServer $server)
  *   Initialize a database connection
@@ -174,6 +176,17 @@
  * sql($table = '', $limit = 0, $start = 0)
  *   Builds the SQL statement for the SELECT builder
  *
+ * setErrorHandler($handler)
+ *   Set the error handler. $handler must be a callable, such as a function
+ * 
+ * setEvent($type, $handler)
+ *   Sets an event, $type currently only supports 'query'
+ * 
+ * removeQueryEvent($type, $handler)
+ *   Remove a query event
+ * 
+ * removeQueryEvents($type=null)
+ *   Remove all query events
  */
 
 if (!defined('TAU'))
@@ -247,7 +260,20 @@ class TauDb
 	public $queries = array();
 
 
+	/**
+	 * Error handler
+	 * @var callable
+	 */
 	private $error_handler = null;
+	
+	
+	/**
+	 * Events
+	 * @var array, indexed by event with an array of events
+	 */
+	private $events = array();
+	
+	
 	
 	/**
 	 * Initializes a database connection
@@ -291,12 +317,98 @@ class TauDb
 	}
 
 	
+	
+	/**
+	 * Add an event
+	 * 
+	 * @param string $type Name of event. Currently only supports 'query'
+	 * @param callable $callable
+	 */
+	public function addEvent( $type, $callable )
+	{
+		if ( is_callable( $callable ) )
+		{
+			if ( is_array( $this->events[ $type ] ) )
+			{
+				$this->events[ $type ][] = $callable;
+			}
+			else
+			{
+				$this->events[ $type ] = array( $callable );
+			}
+		}
+	}
+	
+	
+	
+	/**
+	 * Remove a previously added event
+	 * 
+	 * @param string $type Name of event. Currently only supports 'query'
+	 * @param callable $callable
+	 */
+	public function removeEvent( $type, $callable )
+	{
+		if ( isset( $this->events[ $type ] ) )
+		{
+			foreach ( $this->events[ $type ] AS $event )
+			{
+				if ( $event === $callable )
+				{
+					unset ( $this->events[ $type ] );
+					return;
+				}
+			}
+		}
+	}
+
+	
+	/**
+	 * Remove all events of a certain type, or even all events
+	 * 
+	 * @param string $type Type of events to remove. Currently only supports 'query'. 
+	 *                     If null, all events are removed.
+	 */
+	public function removeEvents( $type = null )
+	{
+		if ( is_null( $type ) )
+		{
+			$this->events = array();
+		}
+		else if ( isset ( $this->events[ $type  ] ) )
+		{
+			unset ( $this->events[ $type ] );
+		}
+	}
+
+
+	
+	/**
+	 * Set error handler for bad queries
+	 * 
+	 * @param callable $callable
+	 */
 	public function setErrorHandler( $callable ) 
 	{
-		$this->error_handler = $callable;
+		if ( is_callable( $callable ) )
+		{
+			$this->error_handler = $callable;
+		}
+		else
+		{
+			throw new \Exception( "Invalid error handler. Must be a callable." );
+		}
 	}
 	
 
+
+	/**
+	 * The default error handler
+	 * 
+	 * @param type $sql
+	 * @param type $error
+	 * @throws \Exception
+	 */
 	public function defaultErrorHandler( $sql, $error )
 	{
 		if ( $this->terminateOnError )
@@ -308,6 +420,7 @@ class TauDb
 			throw new \Exception( $this->dbError() );
 		}
 	}
+	
 	
 	
 	/**
@@ -862,6 +975,14 @@ class TauDb
 			$sql = $this->sql();
 		}
 
+		if ( isset( $this->events[ 'query' ] ) )
+		{
+			foreach ( $this->events[ 'query' ] AS $callable )
+			{
+				call_user_func( $callable, $sql );
+			}
+		}
+		
 		$query = array(
 			'sql' => $sql,
 			'start' => microtime(true),
@@ -938,6 +1059,14 @@ class TauDb
 			return;
 		}
 
+		if ( isset( $this->events[ 'query' ] ) )
+		{
+			foreach ( $this->events[ 'query' ] AS $callable )
+			{
+				call_user_func( $callable, $sql );
+			}
+		}
+		
 		$query = array(
 			'sql' => $sql,
 			'start' => microtime(true),
@@ -1646,6 +1775,20 @@ class TauDb
 		$this->limit = '';
 
 		return $sql;
+	}
+
+	
+	
+	/**
+	 * Sets the file to log queries to
+	 * 
+	 * @param string|boolean $file Name of log file, or false to turn off
+	 * @param boolean $log_selects Flag indicating if SELECT statements should be logged
+	 */
+	public function setLog( $file, $log_selects = false) 
+	{
+		$this->log_file = $file;
+		$this->log_selects = (bool) $log_selects;
 	}
 }
 
