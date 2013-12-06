@@ -26,10 +26,6 @@ class TauCacheFile
 	 */
 	private $path;
 
-	/**
-	 * Note to store with data
-	 */
-	private $note;
 
 	function __construct( $cache, $opts )
 	{
@@ -88,12 +84,10 @@ class TauCacheFile
 			"<?php die('This is an automatically generated file from TauCache. Do not edit'); ?>",
 			'1.0',
 			$ttl ? time() + $ttl : 0,
-			$this->note,
-			strlen( $data ),
+			strlen($data),
 			$data,
 		);
 		file_put_contents( $file, implode( "\n", $lines ) );
-		$this->note = '';
 	}
 
 
@@ -110,7 +104,7 @@ class TauCacheFile
 		$file = $this->path . $key . '.php';
 		if ( is_file( $file ) )
 		{
-			$f = fopen( $file, 'rt');
+			$f = fopen( $file, 'rb' );
 			if ( $f )
 			{
 				// Read header line
@@ -123,11 +117,10 @@ class TauCacheFile
 				$data = false;
 				if ( $expires >= time() || $expires <= 0 )
 				{
-					$note = trim( fgets( $f ) );
-					$length = intval( fgets( $f ) );
-					$data = trim( fgets( $f ) );
+					$length = (int) fgets( $f );
+					$data = fread( $f, $length );
 					fclose( $f );
-					if ( strlen( $data ) == $length )
+					if ( strlen( $data ) === $length );
 					{
 						$data = unserialize( $data );
 						return $data;
@@ -196,17 +189,6 @@ class TauCacheFile
 		{
 			unlink( $this->path . $key . '.php' );
 		}
-	}
-
-
-
-	/**
-	 * Set note for variable.
-	 *
-	 * @param string $note
-	 */
-	function setNote($note) {
-		$this->note = str_replace(array("\r", "\n"), '', $note);
 	}
 
 
