@@ -151,7 +151,6 @@ class TauCache
 
 	public function querySave($db, $resultSet, $query, $ttl)
 	{
-		$this->driver->setNote($query);
 		while ($row = $db->fetch($resultSet))
 		{
 			$this->queries[$this->queryNumber][] = $row;
