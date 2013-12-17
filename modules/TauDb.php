@@ -134,7 +134,7 @@
  * update($table, $values, $where)
  *   Update data in a table
  *
- * insertUpdate($table, $values, $where)
+ * insertUpdate($table, $insert, $update, $where)
  *   Perform an insert-update operation, that is, update if row already
  *   exists, otherwise insert.
  * 
