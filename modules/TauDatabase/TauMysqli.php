@@ -343,7 +343,7 @@ class TauMysqli extends TauDb
 	 */
 	public function affectedRows()
 	{
-		return @mysqli_affected_rows();
+		return @mysqli_affected_rows($this->server->connection);
 	}
 
 	
