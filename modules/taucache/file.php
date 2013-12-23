@@ -118,19 +118,22 @@ class TauCacheFile
 				if ( $expires >= time() || $expires <= 0 )
 				{
 					$length = (int) fgets( $f );
-					$data = fread( $f, $length );
-					fclose( $f );
-					if ( strlen( $data ) === $length );
+					if ( $length > 0 )
 					{
-						$data = unserialize( $data );
-						return $data;
+						$data = fread( $f, $length );
+						if ( strlen( $data ) === $length );
+						{
+							fclose( $f );
+							$data = unserialize( $data );
+							return $data;
+						}
 					}
 				}
-				else
-				{
-					fclose( $f );
-					@unlink( $file );
-				}
+				
+				// If we get here something is wrong with 
+				// the cached file, so we'll remove it from cache.
+				fclose( $f );
+				@unlink( $file );				
 			}
 		}
 		return false;
