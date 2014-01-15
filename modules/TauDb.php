@@ -35,6 +35,8 @@
  *   1.1.5  Nov 11, 2013  Use bcsub() and bcadd() for time computation
  * 
  *   1.1.6  Nov 22, 2013  Add query events
+ * 
+ *   1.1.7  Jan 14, 2014  Add more precision to query benchmarks
  *
  * ::init($engine, TauDbServer $server)
  *   Initialize a database connection
@@ -985,7 +987,7 @@ class TauDb
 		
 		$query = array(
 			'sql' => $sql,
-			'start' => microtime(true),
+			'start' => $this->getTime(),
 		);
 
 		if ($this->cache && $expires)
@@ -1013,12 +1015,12 @@ class TauDb
 			$query['cached'] = false;
 		}
 
-		$query['end'] = microtime(true);
+		$query['end'] = $this->getTime();
 		
 		if ( function_exists( 'bcsub' ) )
 		{
-			$query['time'] = bcsub( $query['end'], $query[ 'start' ], 4 );
-			$this->query_time = bcadd( $this->query_time, $query['time'], 4 ); 
+			$query['time'] = bcsub( $query['end'], $query[ 'start' ], 6 );
+			$this->query_time = bcadd( $this->query_time, $query['time'], 6 ); 
 		}
 		else
 		{
@@ -1775,6 +1777,19 @@ class TauDb
 		$this->limit = '';
 
 		return $sql;
+	}
+
+
+
+	/**
+	 * Get a more precise system time compared to microtime(true).
+	 * Used for benchmarking queries.
+	 */
+	private function getTime()
+	{
+		@list( $fractional, $integer ) = explode( ' ', microtime() );
+		$integer -= 1389744000;
+		return $integer + $fractional;
 	}
 }
 
