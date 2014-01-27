@@ -330,7 +330,7 @@ class TauDb
 	{
 		if ( is_callable( $callable ) )
 		{
-			if ( is_array( $this->events[ $type ] ) )
+			if ( isset( $this->events[ $type ] ) && is_array( $this->events[ $type ] ) )
 			{
 				$this->events[ $type ][] = $callable;
 			}
