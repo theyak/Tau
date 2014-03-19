@@ -202,14 +202,27 @@ class Tau
 			$old_handler = set_error_handler( function( $errno ) {
 				;
 			} );
-			echo htmlspecialchars(print_r($message, true));
+			if (Tau::isCli() || Tau::isAjax())
+			{
+				print_r($message);
+			}
+			else
+			{
+				echo htmlspecialchars(print_r($message, true));
+			}
 			set_error_handler( $old_handler );
 		}
 		else
 		{
-			echo str_replace("\t", '&nbsp; &nbsp; ', htmlspecialchars($message));
+			if (Tau::isCli() || Tau::isAjax())
+			{
+				echo $message;
+			}
+			else
+			{
+				echo str_replace("\t", '&nbsp; &nbsp; ', htmlspecialchars($message));
+			}
 		}
-
 		if (Tau::isCli() || Tau::isAjax() )
 		{
 			echo Tau::$EOL;
