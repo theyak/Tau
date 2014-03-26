@@ -27,17 +27,19 @@
  *   1.1.1  Sep 29, 2013  Intialize $queries variable
  *
  *   1.1.2  Oct  3, 2013  Add insertUpdate()
- * 
+ *
  *   1.1.3  Nov 11, 2013  Add $query_count and $query_time properties
- * 
+ *
  *   1.1.4  Nov 11, 2013  Ability to define own error function
- * 
+ *
  *   1.1.5  Nov 11, 2013  Use bcsub() and bcadd() for time computation
- * 
+ *
  *   1.1.6  Nov 22, 2013  Add query events
- * 
+ *
  *   1.1.7  Jan 14, 2014  Add more precision to query benchmarks
  *
+ *   1.1.8  Mar 26, 2014  Add datetime()
+ * 
  * ::init($engine, TauDbServer $server)
  *   Initialize a database connection
  *
@@ -66,6 +68,10 @@
  *   Encode a string into a string suitable for use in a SQL statement,
  *   including proper escaping and quotations around value.
  *
+ * datetime($time)
+ *   Convert a PHP timestamp or any strtotime() format to string suitable
+ *   for storage in a datetime field.
+ * 
  * fieldName($fieldName)
  *   Return a field name in SQL format
  *
@@ -139,7 +145,7 @@
  * insertUpdate($table, $insert, $update, $where)
  *   Perform an insert-update operation, that is, update if row already
  *   exists, otherwise insert.
- * 
+ *
  * inSet($field, $set, $negate = false)
  *   Retrieve SQL for finding data in a set
  *
@@ -180,13 +186,13 @@
  *
  * setErrorHandler($handler)
  *   Set the error handler. $handler must be a callable, such as a function
- * 
+ *
  * setEvent($type, $handler)
  *   Sets an event, $type currently only supports 'query'
- * 
+ *
  * removeQueryEvent($type, $handler)
  *   Remove a query event
- * 
+ *
  * removeQueryEvents($type=null)
  *   Remove all query events
  */
@@ -234,18 +240,18 @@ class TauDb
 	 */
 	public $extendedDebug = false;
 
-	
+
 	/**
 	 * Number of queries executed
 	 */
 	public $query_count = 0;
-	
-	
+
+
 	/**
 	 * Total time of all queries, in seconds with millisecond precision.
 	 */
 	public $query_time = 0;
-	
+
 
 	/**
 	 * Pointer to writable database. Used in master/slave setups
@@ -267,15 +273,15 @@ class TauDb
 	 * @var callable
 	 */
 	private $error_handler = null;
-	
-	
+
+
 	/**
 	 * Events
 	 * @var array, indexed by event with an array of events
 	 */
 	private $events = array();
-	
-	
+
+
 	
 	/**
 	 * Initializes a database connection
@@ -314,15 +320,15 @@ class TauDb
 
 		$db = new $engine( $server );
 		$db->setErrorHandler( array( $db, 'defaultErrorHandler' ) );
-		
+
 		return $db;
 	}
 
-	
-	
+
+
 	/**
 	 * Add an event
-	 * 
+	 *
 	 * @param string $type Name of event. Currently only supports 'query'
 	 * @param callable $callable
 	 */
@@ -340,12 +346,12 @@ class TauDb
 			}
 		}
 	}
-	
-	
-	
+
+
+
 	/**
 	 * Remove a previously added event
-	 * 
+	 *
 	 * @param string $type Name of event. Currently only supports 'query'
 	 * @param callable $callable
 	 */
@@ -364,11 +370,11 @@ class TauDb
 		}
 	}
 
-	
+
 	/**
 	 * Remove all events of a certain type, or even all events
-	 * 
-	 * @param string $type Type of events to remove. Currently only supports 'query'. 
+	 *
+	 * @param string $type Type of events to remove. Currently only supports 'query'.
 	 *                     If null, all events are removed.
 	 */
 	public function removeEvents( $type = null )
@@ -384,13 +390,13 @@ class TauDb
 	}
 
 
-	
+
 	/**
 	 * Set error handler for bad queries
-	 * 
+	 *
 	 * @param callable $callable
 	 */
-	public function setErrorHandler( $callable ) 
+	public function setErrorHandler( $callable )
 	{
 		if ( is_callable( $callable ) )
 		{
@@ -401,12 +407,12 @@ class TauDb
 			throw new \Exception( "Invalid error handler. Must be a callable." );
 		}
 	}
-	
+
 
 
 	/**
 	 * The default error handler
-	 * 
+	 *
 	 * @param type $sql
 	 * @param type $error
 	 * @throws \Exception
@@ -422,9 +428,9 @@ class TauDb
 			throw new \Exception( $this->dbError() );
 		}
 	}
-	
-	
-	
+
+
+
 	/**
 	 * @abstract
 	 */
@@ -520,7 +526,15 @@ class TauDb
 	{
 		TauError::fatal('dbStringify() method not defined.');
 	}
-
+	
+	/**
+	 * @abstract
+	 */
+	public function dbDatetime($string)
+	{
+		TauError::fatal('dbDatetime() method not defined.');
+	}
+	
 	/**
 	 * @abstract
 	 */
@@ -640,8 +654,22 @@ class TauDb
 		return $this->dbStringify($string, $quote);
 	}
 
+	
+
+	/**
+	 * Encode a timestamp in any of the standard PHP formats accepted
+	 * by DateTime() and strtotime() to database format
+	 * 
+	 * @param mixed $time
+	 * @return string
+	 */
+	public function datetime( $time )
+	{
+		return $this->dbDatetime( $time );
+	}
 
 
+	
 	/**
 	 * Return a field name in SQL format
 	 *
@@ -984,7 +1012,7 @@ class TauDb
 				call_user_func( $callable, $sql );
 			}
 		}
-		
+
 		$query = array(
 			'sql' => $sql,
 			'start' => $this->getTime(),
@@ -1016,11 +1044,11 @@ class TauDb
 		}
 
 		$query['end'] = $this->getTime();
-		
+
 		if ( function_exists( 'bcsub' ) )
 		{
 			$query['time'] = bcsub( $query['end'], $query[ 'start' ], 6 );
-			$this->query_time = bcadd( $this->query_time, $query['time'], 6 ); 
+			$this->query_time = bcadd( $this->query_time, $query['time'], 6 );
 		}
 		else
 		{
@@ -1028,14 +1056,14 @@ class TauDb
 			$this->query_time += $query['time'];
 		}
 		$this->query_count ++;
-		
+
 		$this->queries[] = $query;
 
 		if ($this->resultSet === false)
 		{
 			call_user_func( $this->error_handler, $sql, $this->dbError() );
 		}
-		
+
 
 		return $this->resultSet;
 	}
@@ -1068,7 +1096,7 @@ class TauDb
 				call_user_func( $callable, $sql );
 			}
 		}
-		
+
 		$query = array(
 			'sql' => $sql,
 			'start' => microtime(true),
@@ -1080,7 +1108,7 @@ class TauDb
 		if ( function_exists( 'bcsub' ) )
 		{
 			$query['time'] = bcsub( $query['end'], $query[ 'start' ], 4 );
-			$this->query_time = bcadd( $this->query_time, $query['time'], 4 ); 
+			$this->query_time = bcadd( $this->query_time, $query['time'], 4 );
 		}
 		else
 		{
@@ -1092,7 +1120,7 @@ class TauDb
 
 		$this->queries[] = $query;
 
-		
+
 		if ($resultSet === false)
 		{
 			call_user_func( $this->error_handler, $sql, $this->dbError() );
@@ -1270,7 +1298,7 @@ class TauDb
 		{
 			$rows = array();
 		}
-		
+
 		return $rows;
 	}
 
@@ -1307,7 +1335,7 @@ class TauDb
 		{
 			$rows = array();
 		}
-		
+
 		return $rows;
 	}
 
@@ -1459,7 +1487,7 @@ class TauDb
 
 	/**
 	 * Update  a row or rows in a database table
-	 * 
+	 *
 	 * @param string $table
 	 * @param array $values
 	 * @param string $where
@@ -1469,15 +1497,15 @@ class TauDb
 		$sql = $this->updateSql($table, $values, $where);
 		$this->query($sql);
 	}
-	
-	
-	
+
+
+
 	/**
 	 * Perform an "INSERT UPDATE". That is, update a record(s) if
 	 * exists, otherwise insert. MySQL supports this natively
 	 * but the native function reports warnings if replicating.
 	 * This doesn't throw warnings.
-	 * 
+	 *
 	 * @param string $table
 	 * @param array $insert Data to use for insert. If empty, uses $update
 	 * @param array $update Data to use for update. If empty, uses $insert
@@ -1489,16 +1517,16 @@ class TauDb
 		{
 			$insert = $update;
 		}
-		
+
 		if ( (!is_array($update) || sizeof($update) === 0)  && is_array($insert) )
 		{
 			$update = $insert;
 		}
-	
-		
+
+
 		$sql = "SELECT COUNT(*) FROM " . $this->tableName($table) . " " . $this->whereSql($where);
 		$count = $this->fetchValue($sql);
-		
+
 		if ($count > 0)
 		{
 			$this->update($table, $update, $where);
