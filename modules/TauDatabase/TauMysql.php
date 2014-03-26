@@ -11,6 +11,7 @@
  * changelog:
  *   1.0.0  Sep  8, 2012  Created
  *   1.0.1  Sep 29, 2013  Make sure connection before query
+ *   1.0.2  Mar 26, 2014  Add dbDatetime
  */
 
 if (!defined('TAU'))
@@ -214,6 +215,21 @@ class TauMysql extends TauDb
 		} else {
 			return mysql_real_escape_string($unescaped_string);
 		}
+	}
+
+
+
+	/**
+	 * Encode a timestamp in any of the standard PHP formats accepted
+	 * by DateTime() and strtotime() to database format
+	 * 
+	 * @param mixed $time
+	 * @return string
+	 */
+	public function dbDateTime( $time )
+	{
+		$datetime = new DateTime( $time );
+		return $datetime->format( 'Y-m-d H:i:s' );
 	}
 
 
