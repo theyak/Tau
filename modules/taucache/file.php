@@ -215,4 +215,52 @@ class TauCacheFile
 		}
 		return false;
 	}
+
+
+
+	/**
+	 * Retrieve all, or subset thereof, the keys of object in cache
+	 * 
+	 * @param string|boolean $prefix Prefix for keys to return
+	 * @return string[]
+	 */
+	function keys( $prefix = false )
+	{
+		$length = strlen( $this->path );
+		$files = TauFS::rdir( $this->path );
+		
+		$files = array_map( function ( $value ) use( $length ) {
+			return substr( $value, $length );
+		}, $files );
+		
+		
+		// Only get files of specified prefix - should change to regex
+		if ( is_string( $prefix ) )
+		{
+			$length = strlen( $prefix );
+			foreach ( $files AS $key => $value ) 
+			{
+				if ( substr( $value, 0, $length ) !== $prefix )
+				{
+					unset( $files[ $key ] );
+				}
+			}
+		}
+		
+		
+		// Make sure it's a valid cache file (sorta)
+		foreach ( $files AS $key => $value )
+		{
+			if ( substr( $value, -4 ) !== '.php' )
+			{
+				unset( $files[ $key ] );
+			}
+			else
+			{
+				$files[ $key ] = substr( $value, 0, strlen( $value ) - 4 );
+			}
+		}
+		
+		return $files;
+	}
 }
