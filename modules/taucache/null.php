@@ -68,4 +68,9 @@ class TauCacheFile
 	{
 		return false;
 	}
+	
+	function keys($prefix=false)
+	{
+		return array();
+	}
 }
