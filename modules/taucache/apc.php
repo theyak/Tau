@@ -125,4 +125,43 @@ class TauCacheApc
 		}
 		return false;
 	}
+	
+	
+	
+	/**
+	 * Retrieve all, or subset thereof, the keys of object in cache
+	 *
+	 * @param string|boolean $prefix Prefix for keys to return
+	 * @return string[]
+	 */
+	function keys( $prefix = false )
+	{
+		$list = array();
+
+		$data = apc_cache_info( "user", false );
+		if ( isset( $data[ 'cache_list' ] ) )
+		{
+			$length = strlen( $prefix );
+			if ( is_string( $prefix ) )
+			{
+				foreach ( $data[ 'cache_list' ] AS $value )
+				{
+					if ( substr( $value[ 'info' ], 0, $length ) === $prefix )
+					{
+						$list[] = $value[ 'info' ];
+					}
+				}
+			}
+			else
+			{
+				foreach ( $data[ 'cache_list' ] AS $value )
+				{
+					$list[] = $value[ 'info' ];
+				}
+			}
+
+		}
+
+		return $list;
+	}
 }
