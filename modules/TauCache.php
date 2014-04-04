@@ -100,6 +100,17 @@ class TauCache
 
 
 
+	public function purge( $prefix = false )
+	{
+		$keys = $this->keys( $prefix );
+		foreach ( $keys AS $value )
+		{
+			$this->remove( $value );
+		}
+	}
+
+
+
 	public function incr( $key, $step = 1 )
 	{
 		return $this->driver->incr( $key );
@@ -112,6 +123,12 @@ class TauCache
 		return $this->driver->incr( $key, -$step );
 	}
 
+
+
+	public function keys( $prefix = false )
+	{
+		return $this->driver->keys( $prefix );
+	}
 
 
 
