@@ -30,3 +30,15 @@ Installation
 Download the zip, uncompress it to your includes directory, and include "Tau.php."
 
 Someday I may add it to composer, but I want to make it more full featured before doing that.
+
+Phar
+====
+I'm not a big fan of Phar files because they take longer to load, but if you want to make one, the following are the easiest steps I've found:
+
+Download and extract empir.zip from http://sourceforge.net/projects/empir/files/latest/empir-1.0.0.tar/download
+
+Run the following command:
+
+```
+php -dphar.readonly=0 empir make Tau.phar Tau.php . --exclude="samples/*"
+```
