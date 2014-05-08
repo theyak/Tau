@@ -99,6 +99,58 @@ class TauHttp
 		$http->setPostField($postFields);
 		return $http->fetch($url);
 	}
+
+
+
+	/**
+	 * Gets the headers of a URL. This is similar to the PHP function except:
+	 *  * It does not make an array of redirects
+	 *  * It works in PHP < 5
+	 *  * The array is associative given the header name or http_code
+	 *  * It's about twice as fast
+	 * @param string $url URL to retrieve
+	 * @return string[]
+	 */
+	public static function get_headers( $url )
+	{
+		$headers = array();
+		$ch = curl_init();
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, 'HEAD' );
+		curl_setopt( $ch, CURLOPT_HEADER, true );
+		curl_setopt( $ch, CURLOPT_NOBODY, true );
+		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true );
+		curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 5 );
+		curl_setopt( $ch, CURLOPT_TIMEOUT, 5 );
+		curl_setopt( $ch, CURLOPT_URL, $url );
+		$data = curl_exec( $ch );
+		
+		if ( $data !== false )
+		{
+			$lines = explode( "\n", $data );
+			foreach ( $lines AS $line )
+			{
+				$parts = explode( ':', $line, 2 );
+				if ( sizeof( $parts ) === 2 )
+				{
+					$headers[ trim( $parts[ 0 ] ) ] = trim( $parts[ 1 ] ); 
+				}
+				else if ( substr( $line, 0, 4 ) === 'HTTP' )
+				{
+					$headers[ 'http_code' ] = substr( $line, 9, 3 );
+				}
+			}
+		}
+		else
+		{
+			// Should this be 404 or something else?
+			$headers[ 'http_code' ] = 404;
+		}
+		
+		return $headers;
+	}
+
+
 	
 	public function fetch($url = null)
 	{
