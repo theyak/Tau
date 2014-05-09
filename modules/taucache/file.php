@@ -133,7 +133,10 @@ class TauCacheFile
 				// If we get here something is wrong with 
 				// the cached file, so we'll remove it from cache.
 				fclose( $f );
-				@unlink( $file );				
+				if ( is_file( $file ) )
+				{
+					@unlink( $file );
+				}
 			}
 		}
 		return false;
