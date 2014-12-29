@@ -35,8 +35,6 @@ class TauFS
 
 		$result = array();
 
-		$dh = opendir( $dir );
-
 		if ( ( $dh = opendir( $dir ) ) !== false )
 		{
 			while ( ( $file = readdir( $dh ) ) !== false )
