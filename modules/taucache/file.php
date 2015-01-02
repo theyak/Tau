@@ -3,7 +3,7 @@
  * File driver for TAU Cache module
  *
  * @Author          theyak
- * @Copyright       2011
+ * @Copyright       2015
  * @Project Page    https://github.com/theyak/Tau
  * @Documentation   None!
  *
@@ -25,6 +25,13 @@ class TauCacheFile
 	 * Path of cache data files
 	 */
 	private $path;
+	
+	
+	/**
+	 * Previously loaded cache data
+	 * @var array()
+	 */
+	private static $cache_results = array();
 
 
 	function __construct( $cache, $opts )
@@ -65,7 +72,7 @@ class TauCacheFile
 	 * @param mixed $value
 	 * @param int $ttl Time to live. 0 to live forever
 	 */
-	function set( $key, $value, $ttl = 3600 )
+	function set( $key, $value, $ttl = 3600, $opts = array() )
 	{
 		// Check if key has a directory name
 		$dirname = dirname( $key );
@@ -84,9 +91,20 @@ class TauCacheFile
 			"<?php die('This is an automatically generated file from TauCache. Do not edit'); ?>",
 			'1.0',
 			$ttl ? time() + $ttl : 0,
-			strlen($data),
-			$data,
 		);
+		
+		if ( isset( $opts[ 'notes' ] ) )
+		{
+			$lines[] = trim( preg_replace('/[\n\r\s\t]+/', ' ', $opts[ 'notes' ] ) );
+		}
+		else
+		{
+			$lines[] = '';
+		}
+		
+		$lines[] = strlen( $data );
+		$lines[] = $data;
+		
 		file_put_contents( $file, implode( "\n", $lines ) );
 	}
 
@@ -101,6 +119,11 @@ class TauCacheFile
 	 */
 	function get($key)
 	{
+		if ( isset( static::$cache_results[ $key ] ) )
+		{
+			return static::$cache_results[ $key ][ 'data' ];
+		}
+		
 		$file = $this->path . $key . '.php';
 		if ( is_file( $file ) )
 		{
@@ -110,6 +133,10 @@ class TauCacheFile
 				// Read header line
 				$header = fgets( $f );
 
+				if ( ! $header )
+				{
+					return false;
+				}
 				$version = trim( fgets( $f ) );
 
 				$expires = intval( fgets( $f ) );
@@ -117,25 +144,35 @@ class TauCacheFile
 				$data = false;
 				if ( $expires >= time() || $expires <= 0 )
 				{
-					$length = (int) fgets( $f );
-					if ( $length > 0 )
+					$notes = fgets( $f );
+					if ( preg_match( '/^[0-9]+$/', $notes ) ) 
 					{
-						$data = fread( $f, $length );
-						if ( strlen( $data ) === $length );
-						{
-							fclose( $f );
-							$data = unserialize( $data );
-							return $data;
-						}
+						$length = (int) $notes;
+					}
+					else
+					{
+						$length = (int) fgets( $f );
+					}
+					$data = fread( $f, $length );
+					fclose( $f );
+					if ( strlen( $data ) === $length );
+					{
+						$data = unserialize( $data );
+						static::$cache_results[ $key ] = array(
+							'data' => $data,
+							'notes' => $notes,
+						);
+							
+						return $data;
 					}
 				}
-				
-				// If we get here something is wrong with 
-				// the cached file, so we'll remove it from cache.
-				fclose( $f );
-				if ( is_file( $file ) )
+				else
 				{
-					@unlink( $file );
+					fclose( $f );
+					if ( is_file( $file ) )
+					{
+						@unlink( $file );
+					}
 				}
 			}
 		}
@@ -143,6 +180,29 @@ class TauCacheFile
 	}
 
 
+	
+	/**
+	 * Get note for a cache entry
+	 * 
+	 * @param string $key
+	 * @return string
+	 */
+	public function getNote($key)
+	{
+		if ( ! isset( static::$cache_results[ $key ] ) )
+		{
+			$result = $this->get( $key );
+		}
+		
+		if ( isset( static::$cache_results[ $key ] ) )
+		{
+			return static::$cache_results[ $key ][ 'notes' ];
+		}
+		
+		return '';
+	}
+	
+	
 
 	/**
 	 * Check of a key exists in cache
@@ -216,10 +276,11 @@ class TauCacheFile
 			$this->set( $key, $value );
 			return $value;
 		}
+		
 		return false;
 	}
-
-
+	
+	
 
 	/**
 	 * Retrieve all, or subset thereof, the keys of object in cache
@@ -265,5 +326,5 @@ class TauCacheFile
 		}
 		
 		return $files;
-	}
+	}	
 }
