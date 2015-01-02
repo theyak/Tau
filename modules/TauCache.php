@@ -3,7 +3,7 @@
  * Cache Module For TAU
  *
  * @Author          theyak
- * @Copyright       2011
+ * @Copyright       2014
  * @Project Page    https://github.com/theyak/Tau
  * @Documentation   None!
  */
@@ -84,11 +84,18 @@ class TauCache
 		return $this->driver->get($key);
 	}
 
-
+	
 
 	public function exists($key)
 	{
 		return $this->driver->exists($key);
+	}
+	
+	
+	
+	public function getNote($key)
+	{
+		return $this->driver->getNote($key);
 	}
 
 
@@ -97,15 +104,28 @@ class TauCache
 	{
 		return $this->driver->remove($key);
 	}
+	
 
-
-
+	
 	public function purge( $prefix = false )
 	{
 		$keys = $this->keys( $prefix );
 		foreach ( $keys AS $value )
 		{
 			$this->remove( $value );
+		}
+	}
+	
+	
+	public function clean( $prefix = false )
+	{
+		$keys = $this->keys( $prefix );
+		foreach ( $keys AS $index => $key )
+		{
+			if ( ! $this->exists( $key ) )
+			{
+				unset( $keys[ $index ] );
+			}
 		}
 	}
 
@@ -124,12 +144,12 @@ class TauCache
 	}
 
 
-
+	
 	public function keys( $prefix = false )
 	{
 		return $this->driver->keys( $prefix );
 	}
-
+	
 
 
 	public function queryFetch($queryNumber)
@@ -174,9 +194,9 @@ class TauCache
 			$this->queries[$this->queryNumber][] = $row;
 		}
 
-		$query = preg_replace('/[\n\r\s\t]+/', ' ', $query);
+		$query = trim( preg_replace('/[\n\r\s\t]+/', ' ', $query) );
 		$key = 'sql/' . md5($query);
-		$this->driver->set($key, $this->queries[$this->queryNumber], $ttl);
+		$this->driver->set($key, $this->queries[$this->queryNumber], $ttl, array( 'notes' => $query ) );
 		$this->queryIndex[$this->queryNumber] = 0;
 
 		return $this->queryNumber++;
