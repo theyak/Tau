@@ -3,7 +3,7 @@
  * APC driver for TAU Cache module
  *
  * @Author          theyak
- * @Copyright       2013
+ * @Copyright       2014
  * @Project Page    https://github.com/theyak/Tau
  * @Dependencies    TauError
  */
@@ -103,6 +103,19 @@ class TauCacheApc
 	{
 		;
 	}
+	
+	
+	
+	/**
+	 * Get note for variable. Not valid for apc.
+	 * 
+	 * @param string $key
+	 * @return string
+	 */
+	function getNote( $key )
+	{
+		return '';
+	}
 
 
 
@@ -125,9 +138,9 @@ class TauCacheApc
 		}
 		return false;
 	}
-	
-	
-	
+
+
+
 	/**
 	 * Retrieve all, or subset thereof, the keys of object in cache
 	 *
