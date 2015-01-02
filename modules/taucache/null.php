@@ -3,7 +3,7 @@
  * File driver for TAU Cache module
  *
  * @Author          theyak
- * @Copyright       2011
+ * @Copyright       2015
  * @Project Page    None!
  * @Dependencies    TauError
  * @Documentation   None!
@@ -54,6 +54,11 @@ class TauCacheFile
 		return false;
 	}
 
+	function getNote($key)
+	{
+		return '';
+	}
+	
 	function setNote($node)
 	{
 		return false;
@@ -67,10 +72,5 @@ class TauCacheFile
 	function decr($key)
 	{
 		return false;
-	}
-	
-	function keys($prefix=false)
-	{
-		return array();
 	}
 }
