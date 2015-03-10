@@ -62,33 +62,30 @@ class TauFS
 	 *
 	 * @return string[] List of files
 	 */
-	public static function rdir( $dir = '.', $pattern = '*', &$files = array() )
-	{
-		$dir = rtrim( $dir, '/' );
-		$dir = rtrim( $dir, '\\' );
+    public static function rdir( $dir, $pattern = '*', $prefix = '' )
+    {
+        // Trim ending slashes from path
+        $dir = rtrim( $dir, '\\/' );
 
-		if ( ( $dh = opendir( $dir ) ) !== false )
-		{
-			while ( ( $file = readdir( $dh ) ) !== false )
-			{
-				if ( ! in_array( $file, self::$exclude ) )
-				{
-					$file = $dir . DIRECTORY_SEPARATOR . $file;
-					if ( is_dir( $file ) )
-					{
-						array_merge( $files, self::rdir( $file, $pattern, $files ) );
-					}
-					else if ( fnmatch( $pattern, basename( $file ) ) )
-					{
-						$files[] = $file;
-					}
-				}
-			}
-			closedir( $dh );
-		}
+        $result = array();
 
-		return $files;
-	}
+        foreach ( scandir( $dir ) AS $f )
+        {
+            if ( $f !== '.' && $f !== '..' )
+            {
+                if ( is_dir( "$dir/$f" ) )
+                {
+                    $result = array_merge( $result, static::rdir( "$dir/$f", $pattern, "$dir/$f/" ) );
+                }
+                else if ( fnmatch( $pattern, basename( $f ) ) )
+                {
+                    $result[] = $prefix . $f;
+                }
+            }
+        }
+
+        return $result;
+    }
 
 
 
