@@ -60,33 +60,36 @@ class TauMysqli extends TauDb
 				$this->server->port
 			);
 
-			if (!$this->server->connection)
+			if ($this->server->terminate_on_error)
 			{
-				if ($this->server->host === '127.0.0.1' || $this->server->host === 'localhost')
+				if (!$this->server->connection)
 				{
-					$message = array(
-						'Unable to connect to database. The database server is either down ',
-						'or an invalid username and password combination was supplied.<br><br>',
-						'You will need to grant access to the database for user ' . $this->server->username,
-						' with something like:<br><br>',
-						'&nbsp;&nbsp;&nbsp;&nbsp;GRANT ALL ON ' . $this->server->database . 
-						'.* TO ' . $this->server->username,
-						'@\'%\' IDENTIFIED BY \'PASSWORD\'',
-						'<br><br>Please see <a href="http://www.cyberciti.biz/tips/',
-						'how-do-i-enable-remote-access-to-mysql-database-server.html">',
-						'How Do I Enable Remote Access To MySQL Database Server?</a> ',
-						'for more information.',
-					);
-					TauError::fatal(implode('', $message));
+					if ($this->server->host === '127.0.0.1' || $this->server->host === 'localhost')
+					{
+						$message = array(
+							'Unable to connect to database. The database server is either down ',
+							'or an invalid username and password combination was supplied.<br><br>',
+							'You will need to grant access to the database for user ' . $this->server->username,
+							' with something like:<br><br>',
+							'&nbsp;&nbsp;&nbsp;&nbsp;GRANT ALL ON ' . $this->server->database . 
+							'.* TO ' . $this->server->username,
+							'@\'%\' IDENTIFIED BY \'PASSWORD\'',
+							'<br><br>Please see <a href="http://www.cyberciti.biz/tips/',
+							'how-do-i-enable-remote-access-to-mysql-database-server.html">',
+							'How Do I Enable Remote Access To MySQL Database Server?</a> ',
+							'for more information.',
+						);
+						TauError::fatal(implode('', $message));
+					}
+					else
+					{
+						TauError::fatal('Unable to connect to database.');
+					}
 				}
 				else
 				{
-					TauError::fatal('Unable to connect to database.');
+					mysqli_set_charset($this->server->connection, "utf8");
 				}
-			}
-			else
-			{
-				mysqli_set_charset($this->server->connection, "utf8");
 			}
 		}
 
@@ -138,8 +141,11 @@ class TauMysqli extends TauDb
 			$this->connect();
 		}
 		$this->query = $sql;
-		$this->resultSet = mysqli_query($this->server->connection, $sql);
-		return $this->resultSet;
+		if ($this->server->connection)
+		{
+			$this->resultSet = mysqli_query($this->server->connection, $sql);
+			return $this->resultSet;
+		}
 	}
 
 
@@ -172,7 +178,10 @@ class TauMysqli extends TauDb
 	 */
 	public function dbError()
 	{
-		return mysqli_error($this->server->connection);
+		if ($this->server->connection)
+		{
+			return mysqli_error($this->server->connection);
+		}
 	}
 
 
@@ -222,7 +231,7 @@ class TauMysqli extends TauDb
 		if ($quote) {
 			return "'" . @mysqli_real_escape_string($this->server->connection, $unescaped_string) . "'";
 		} else {
-			return mysqli_real_escape_string($this->server_connection, $unescaped_string);
+			return mysqli_real_escape_string($this->server->connection, $unescaped_string);
 		}
 	}
 
