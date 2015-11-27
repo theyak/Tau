@@ -172,7 +172,7 @@ class TauCache
 
 	public function queryLoad($query)
 	{
-		$query = preg_replace('/[\n\r\s\t]+/', ' ', $query);
+		$query = trim( preg_replace('/[\n\r\s\t]+/', ' ', $query) );
 		$key = 'sql/' . md5($query);
 		$rows = $this->driver->get($key);
 		if ($rows === false)
