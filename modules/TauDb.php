@@ -1523,18 +1523,7 @@ class TauDb
 			$update = $insert;
 		}
 
-
-		$sql = "SELECT COUNT(*) FROM " . $this->tableName($table) . " " . $this->whereSql($where);
-		$count = $this->fetchValue($sql);
-
-		if ($count > 0)
-		{
-			$this->update($table, $update, $where);
-		}
-		else
-		{
-			$this->insert($table, $insert);
-		}
+		$this->dbInsertUpdate( $table, $insert, $update, $where );
 	}
 
 
