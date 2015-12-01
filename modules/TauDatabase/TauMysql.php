@@ -406,4 +406,29 @@ class TauMysql extends TauDb
 		}
 		return false;
 	}
+
+
+
+	/**
+	 * Perform an Insert/Update operation
+	 *
+	 * @param string $table Name of table
+	 * @param array $insert Data to insert
+	 * @param array $update Data to update if insert fails
+	 * @param mixed $where Unused in MySQL
+	 */
+	public function dbInsertUpdate( $table, $insert, $update, $where )
+	{
+		$sql = $this->insertSql( $table, $insert );
+		$sql .= ' ON DUPLICATE KEY UPDATE ';
+
+		$values = array();
+		foreach ( $update AS $fieldName => $value )
+		{
+			$values[] = $this->fieldName( $fieldName ) . ' = ' . $this->escape( $value );
+		}
+		$sql .= implode(', ', $values);
+
+		$this->query( $sql );
+	}	
 }
