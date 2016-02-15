@@ -1461,13 +1461,17 @@ class TauDb
 	/**
 	 * Insert data in to a table
 	 *
-	 * @param string $table
-	 * @param array $values
+	 * @param string $table Name of table to insert data into
+	 * @param array $values Values to insert into table
+	 * @param boolean $return If true, returns database created ID for row
 	 */
-	public function insert($table, $data)
+	public function insert($table, $data, $return=false)
 	{
 		$sql = $this->insertSql($table, $data);
 		$this->query($sql);
+		if ($return) {
+			return $this->insertId();
+		}
 	}
 
 
