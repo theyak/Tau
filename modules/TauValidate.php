@@ -44,7 +44,7 @@ class TauValidate
 	public static function is_integer($value, $positiveOnly = false)
 	{
 		if ($positiveOnly) {
-			return preg_match('/^\d*$/', $value) == 1;		
+			return preg_match('/^\d+$/', $value) == 1;		
 		}
 		return preg_match('/^[-]?\d*$/', $value) == 1;
 	}
