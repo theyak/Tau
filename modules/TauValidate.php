@@ -21,17 +21,26 @@ class TauValidate
 
 	public static function is_ipv4($data)
 	{
+		if ( is_object( $data ) ) return false;
+		if ( is_array( $data ) ) return false;
+
 		return preg_match(TauValidate::$ipv4, $data);
 	}
 
 	public static function is_ipv6($data)
 	{
+		if ( is_object( $data ) ) return false;
+		if ( is_array( $data ) ) return false;
+
 		return preg_match(TauValidate::$ipv6, $data);
 	}
 
 
 	public static function is_email($data, $strict = false)
 	{
+		if ( is_object( $data ) ) return false;
+		if ( is_array( $data ) ) return false;
+
 		$regex = $strict
 			? '/^([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,6})$/i'
 			: '/^([*+!.&#$¦\'\\%\/0-9a-z^_`{}=?~:-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,6})$/i';
@@ -43,6 +52,9 @@ class TauValidate
 	
 	public static function is_integer($value, $positiveOnly = false)
 	{
+		if ( is_object( $value ) ) return false;
+		if ( is_array( $value ) ) return false;
+		
 		if ($positiveOnly) {
 			return preg_match('/^\d+$/', $value) == 1;		
 		}
@@ -51,6 +63,9 @@ class TauValidate
 	
 	public static function is_integer_in_range($value, $min, $max)
 	{
+		if ( is_object( $value ) ) return false;
+		if ( is_array( $value ) ) return false;
+		
 		if (!is_numeric($min) || !is_numeric($max)) {
 			return false;
 		}
@@ -73,6 +88,9 @@ class TauValidate
 	
 	public static function is_length($value, $min = 0, $max = 32767)
 	{
+		if ( is_object( $value ) ) return false;
+		if ( is_array( $value ) ) return false;
+		
 		if ($min > $max) {
 			$temp = $min;
 			$min = $max;
