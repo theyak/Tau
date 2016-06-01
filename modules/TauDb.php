@@ -861,7 +861,7 @@ class TauDb
 		{
 			$w = reset($where);
 
-			if ( is_array( $w ) )
+			if ( is_array( $w ) && isset( $w[ 'field' ] ) )
 			{
 				$string = array(
 					'(',
@@ -893,7 +893,18 @@ class TauDb
 			{
 				foreach ($where AS $key => $value)
 				{
-					$string[] = $this->fieldName($key) . ' = ' . $this->escape($value);
+					if ( is_array( $value ) )
+					{
+						$string[] = $this->inSetSql( $key, $value );
+					}
+					else if ( $value instanceof TauSqlCompleteExpression )
+					{
+						$string[] = $value->toString();
+					}
+					else
+					{
+						$string[] = $this->fieldName($key) . (is_null($value) ? ' IS ' : ' = ') . $this->escape($value);
+					}
 				}
 			}
 			if ($includeKeyword)
