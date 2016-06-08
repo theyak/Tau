@@ -103,4 +103,29 @@ class TauFS
 			mkdir( $dir, $permissions, $recursive );
 		}
 	}
+
+
+
+	/**
+	 * Remove a directory and all files within the directory
+	 *
+	 * @param string $dir
+	 */
+	public static function rmdir( $dir )
+	{
+		$files = array_diff( scandir( $dir ), static::$exclude );
+		foreach ( $files AS $file )
+		{
+			if ( is_dir( $dir . '/' . $file ) )
+			{
+				static::rmdir( $dir . '/' . $file );
+			}
+			else
+			{
+				@unlink( $dir . '/' . $file );
+			}
+		}
+
+		return rmdir( $dir );
+	}	
 }
