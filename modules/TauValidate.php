@@ -42,8 +42,8 @@ class TauValidate
 		if ( is_array( $data ) ) return false;
 
 		$regex = $strict
-			? '/^([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,6})$/i'
-			: '/^([*+!.&#$¦\'\\%\/0-9a-z^_`{}=?~:-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,6})$/i';
+			? '/^([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,8})$/i'
+			: '/^([*+!.&#$¦\'\\%\/0-9a-z^_`{}=?~:-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,8})$/i';
 		if (preg_match($regex, trim($data), $matches)) {
 			return true;
 		}
