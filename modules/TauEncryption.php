@@ -131,7 +131,7 @@ class TauEncryption
 		$iv = mcrypt_create_iv( $iv_size, MCRYPT_RAND );
 		$crypttext = mcrypt_encrypt( MCRYPT_RIJNDAEL_256, $key, $value, MCRYPT_MODE_ECB, $iv );
 
-		return static::safe_b64encode( $crypttext );
+		return trim( static::safe_b64encode( $crypttext ) );
 	}
 
 
@@ -142,6 +142,6 @@ class TauEncryption
 		$iv = mcrypt_create_iv( $iv_size, MCRYPT_RAND );
 		$decrypttext = mcrypt_decrypt( MCRYPT_RIJNDAEL_256, $key, $crypttext, MCRYPT_MODE_ECB, $iv );
 
-		return $decrypttext;
+		return trim( $decrypttext );
 	}
 }
