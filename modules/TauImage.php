@@ -115,6 +115,8 @@ class TauImage
 		}
 
 		$destination = imagecreatetruecolor($width, $height);
+		imagealphablending($destination, false);
+		imagesavealpha($destination, true);
 		imagecopyresampled($destination, $this->_image, 0, 0, 0, 0, $width, $height, $this->_width, $this->_height);
 
 		$this->destroy();
