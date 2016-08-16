@@ -91,6 +91,7 @@ class TauEncryption
 		if (empty($key)) {
 			$key = $this->key;
 		}
+		$key = static::pad( $key );
 
 		$iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB);
 		$iv = mcrypt_create_iv($iv_size, MCRYPT_RAND);
@@ -107,6 +108,7 @@ class TauEncryption
 		if (empty($key)) {
 			$key = $this->key;
 		}
+		$key = static::pad( $key );
 
 		$crypttext = static::safe_b64decode($value);
 		$iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB);
@@ -126,6 +128,7 @@ class TauEncryption
 		if ( ! is_string( $key ) || strlen( $key ) <= 0 ) {
 			return false;
 		}
+		$key = static::pad( $key );
 
 		$iv_size = mcrypt_get_iv_size( MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB );
 		$iv = mcrypt_create_iv( $iv_size, MCRYPT_RAND );
@@ -140,8 +143,33 @@ class TauEncryption
 		$crypttext = static::safe_b64decode( $value );
 		$iv_size = mcrypt_get_iv_size( MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB );
 		$iv = mcrypt_create_iv( $iv_size, MCRYPT_RAND );
+
+		$key = static::pad( $key );
+
+
+		Boo::log( TauDebug::debug_backtrace() );
 		$decrypttext = mcrypt_decrypt( MCRYPT_RIJNDAEL_256, $key, $crypttext, MCRYPT_MODE_ECB, $iv );
 
 		return trim( $decrypttext );
+	}
+
+
+	public static function pad( $key ) {
+		$resize = 0;
+
+		// Keys must be 16, 24, or 32 bytes
+		if ( strlen( $key ) < 16 ) {
+			$resize = 16;
+		} else if ( strlen( $key ) < 24 ) {
+			$resize = 24;
+		} else if ( strlen( $key ) < 32 ) {
+			$resize = 32;
+		}
+
+		if ( $resize ) {
+			$key = str_pad( $key, $resize, "\0" );
+		}
+
+		return $key;
 	}
 }
