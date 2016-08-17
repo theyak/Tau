@@ -8,6 +8,7 @@
  * @Project Page    None!
  * @docs            None!
  *
+ * 2016-08-17 Add pad function to prevent warnings in PHP 5.6+
  */
 
 /*
@@ -146,8 +147,6 @@ class TauEncryption
 
 		$key = static::pad( $key );
 
-
-		Boo::log( TauDebug::debug_backtrace() );
 		$decrypttext = mcrypt_decrypt( MCRYPT_RIJNDAEL_256, $key, $crypttext, MCRYPT_MODE_ECB, $iv );
 
 		return trim( $decrypttext );
@@ -168,6 +167,11 @@ class TauEncryption
 
 		if ( $resize ) {
 			$key = str_pad( $key, $resize, "\0" );
+		}
+
+		// The max key size is 32. Trim if needed.
+		if ( strlen( $key ) > 32 ) {
+			$key = substr( $key, 0, 32 );
 		}
 
 		return $key;
