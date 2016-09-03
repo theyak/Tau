@@ -245,6 +245,7 @@ class TauCache
 					$result[reset($row)] = $row;
 				}
 			}
+			return $result;
 		}
 		return false;
 	}
