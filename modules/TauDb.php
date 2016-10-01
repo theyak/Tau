@@ -39,7 +39,7 @@
  *   1.1.7  Jan 14, 2014  Add more precision to query benchmarks
  *
  *   1.1.8  Mar 26, 2014  Add datetime()
- * 
+ *
  * ::init($engine, TauDbServer $server)
  *   Initialize a database connection
  *
@@ -71,7 +71,7 @@
  * datetime($time)
  *   Convert a PHP timestamp or any strtotime() format to string suitable
  *   for storage in a datetime field.
- * 
+ *
  * fieldName($fieldName)
  *   Return a field name in SQL format
  *
@@ -282,7 +282,7 @@ class TauDb
 	private $events = array();
 
 
-	
+
 	/**
 	 * Initializes a database connection
 	 *
@@ -526,7 +526,7 @@ class TauDb
 	{
 		TauError::fatal('dbStringify() method not defined.');
 	}
-	
+
 	/**
 	 * @abstract
 	 */
@@ -534,7 +534,7 @@ class TauDb
 	{
 		TauError::fatal('dbDatetime() method not defined.');
 	}
-	
+
 	/**
 	 * @abstract
 	 */
@@ -654,12 +654,12 @@ class TauDb
 		return $this->dbStringify($string, $quote);
 	}
 
-	
+
 
 	/**
 	 * Encode a timestamp in any of the standard PHP formats accepted
 	 * by DateTime() and strtotime() to database format
-	 * 
+	 *
 	 * @param mixed $time
 	 * @return string
 	 */
@@ -669,7 +669,7 @@ class TauDb
 	}
 
 
-	
+
 	/**
 	 * Return a field name in SQL format
 	 *
@@ -820,6 +820,11 @@ class TauDb
 	 */
 	public function inSetSql($field, $set, $negate = false)
 	{
+		if (sizeof($set) === 0)
+		{
+			return ($negate ? 'TRUE' : 'FALSE');
+		}
+
 		$sql = $this->fieldName($field) . ' ';
 		$sql .= ($negate ? 'NOT IN (' : 'IN (');
 		$sql .= implode(', ', array_map(array($this, 'escape'), $set)) . ')';
