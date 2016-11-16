@@ -450,5 +450,30 @@ class TauMysqli extends TauDb
 		$sql .= implode(', ', $values);
 
 		$this->query( $sql );
+	}
+
+
+
+	/**
+	 * Perform an Insert/Update operation when there is a duplicate
+	 * unique or primary key.
+	 *
+	 * @param string $table Name of table
+	 * @param array $insert Data to insert
+	 * @param array $update Data to update if insert fails
+	 */
+	public function dbUpsert( $table, $insert, $update )
+	{
+		$sql = $this->insertSql( $table, $insert );
+		$sql .= ' ON DUPLICATE KEY UPDATE ';
+
+		$values = array();
+		foreach ( $update AS $fieldName => $value )
+		{
+			$values[] = $this->fieldName( $fieldName ) . ' = ' . $this->escape( $value );
+		}
+		$sql .= implode(', ', $values);
+
+		$this->query( $sql );
 	}	
 }
