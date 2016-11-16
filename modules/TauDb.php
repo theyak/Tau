@@ -1549,6 +1549,32 @@ class TauDb
 
 
 	/**
+	 * Perform an INSERT/UPDATE based on duplicate keys. This 
+	 * differs from insertUpdate() in that it is based solely
+	 * on database keys, not a where value
+	 * 
+	 * @param string $table
+	 * @param array $insert
+	 * @param array $update
+	 */
+	public function upsert( $table, $insert, $update = null )
+	{
+		if ( (! is_array($insert) || sizeof( $insert ) === 0 )  && is_array( $update ) )
+		{
+			$insert = $update;
+		}
+
+		if ( (! is_array($update) || sizeof( $update ) === 0 )  && is_array( $insert ) )
+		{
+			$update = $insert;
+		}
+		
+		$this->dbUpsert( $table, $insert, $update );
+	}
+
+
+
+	/**
 	 * Retrieve SQL for finding data in a set
 	 *
 	 * @param string $field Name of field
