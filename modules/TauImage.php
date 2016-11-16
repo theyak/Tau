@@ -329,15 +329,14 @@ class TauImage
 			mkdir(dirname($file), 0744, true);
 		}
 
-		$info = pathinfo($file);
-		$basename = basename($file, '.' . $info['extension']);
+		$basename = basename($file);
 
 		if ($this->_mimetype == 'image/gif') {
-			imagegif($this->getImageResource(), dirname($file) . '/' . $basename . '.gif');
+			imagegif($this->getImageResource(), $basename);
 		} else if ($this->_mimetype == 'image/png') {
-			imagepng($this->getImageResource(), dirname($file) . '/' . $basename . '.png');
+			imagepng($this->getImageResource(), $basename);
 		} else {
-			imagejpeg($this->getImageResource(), dirname($file) . '/' . $basename . '.jpg', 80);
+			imagejpeg($this->getImageResource(), $basename, 80);
 		}
 	}
 
