@@ -40,6 +40,8 @@
  *
  *   1.1.8  Mar 26, 2014  Add datetime()
  *
+ *   1.1.9  Dec 29, 2016  Allow array of strings in WHERE clause. Use at own risk, no internal escaping
+ *
  * ::init($engine, TauDbServer $server)
  *   Initialize a database connection
  *
@@ -905,6 +907,10 @@ class TauDb
 					else if ( $value instanceof TauSqlCompleteExpression )
 					{
 						$string[] = $value->toString();
+					}
+					else if ( is_int( $key ) )
+					{
+						$string[] = $value;
 					}
 					else
 					{
