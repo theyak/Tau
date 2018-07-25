@@ -1,35 +1,36 @@
 <?php
 /**
- * Encryption module for TAU
+ * Crypt module for what may become Tau2 or something else entirely.
+ * This is based on Tau's TauEncryption class.
  *
  * @Author          theyak
  * @Copyright       2018
  * @Project Page    https://github.com/theyak/Tau
  * @docs            None!
  *
- * 2016-08-17 Add pad function to prevent warnings in PHP 5.6+
- * 2018-07-24 Rewrite for using openssl instead of mcrypt
- * 2018-07-24 Reformat for PSR-12 (minus namespace) format
+ * 2018-07-24 Created
  */
 
 /*
-Examples:
+Example:
 
-// Static calls
-$encoded = TauEncryption::encrypt( 'bob', 'hi' );
-$decoded = TauEncryption::decrypt( $encoded, 'hi' );
-Tau::dump($encoded);
-Tau::dump($decoded);
+include "Tau/modules/Crypt.php";
+
+use \Theyak\Tau\Crypt;
+
+$key = Crypt::getRandomKey();
+$encoded = Crypt::encrypt( $key, 'This is plain text' );
+$decoded = Crypt::decrypt( $key, $encoded );
+
+echo $key . "\n";
+echo $encoded . "\n";
+echo $decoded . "\n";
 */
 
-class TauEncryption
-{
-    /**
-     * Default key
-     * @var string
-     */
-    public $key = '';
+namespace Theyak\Tau;
 
+class Crypt
+{
     public static $cipher = "AES-256-CBC";
 
     public static function getRandomKey($length = 32)
@@ -37,32 +38,7 @@ class TauEncryption
         return openssl_random_pseudo_bytes($length);
     }
 
-    public function __construct($key = null)
-    {
-        if (! is_null($key)) {
-            $this->key = $key;
-        }
-    }
-
-    public function encode($plainText, $key = null)
-    {
-        if (empty($key)) {
-            $key = $this->key;
-        }
-
-        return static::encrypt($plainText, $key);
-    }
-
-    public function decode($encryptedString, $key = null)
-    {
-        if (empty($key)) {
-            $key = $this->key;
-        }
-
-        return static::decrypt($encryptedString, $key);
-    }
-
-    public static function encrypt($plainText, $key)
+    public static function encrypt($key, $plainText)
     {
         $ivlen = openssl_cipher_iv_length(static::$cipher);
         $iv = openssl_random_pseudo_bytes($ivlen);
@@ -71,7 +47,7 @@ class TauEncryption
         return base64_encode($iv . $hmac . $raw);
     }
 
-    public static function decrypt($encryptedString, $key)
+    public static function decrypt($key, $encryptedString)
     {
         $c = base64_decode($encryptedString);
         $ivlen = openssl_cipher_iv_length(static::$cipher);
