@@ -42,6 +42,8 @@
  *
  *   1.1.9  Dec 29, 2016  Allow array of strings in WHERE clause. Use at own risk, no internal escaping
  *
+ *   1.1.10 Oct 12, 2018  Add raw(), in(), and notIn()
+ *
  * ::init($engine, TauDbServer $server)
  *   Initialize a database connection
  *
@@ -65,6 +67,9 @@
  *
  * escape($value)
  *   Convert PHP datatypes to those appropriate for SQL statements
+ *
+ * raw($sql)
+ *   Use raw SQL with no munging
  *
  * stringify($string, $quote=true)
  *   Encode a string into a string suitable for use in a SQL statement,
@@ -150,6 +155,12 @@
  *
  * inSet($field, $set, $negate = false)
  *   Retrieve SQL for finding data in a set
+ *
+ * in($field, $set)
+ *   Retrieve SQL for finding data in set
+ *
+ * notIn($field, $set)
+ *   Retrieve SQL for finding data not in set
  *
  * insertId()
  *   Get the ID from the last insert
@@ -975,8 +986,8 @@ class TauDb
 	/**
 	 * Convert PHP datatypes to those appropriate for SQL statements
 	 *
-	 * @param any $value
-	 * @return any
+	 * @param mixed $value
+	 * @return mixed
 	 */
 
 	public function escape($value)
@@ -996,6 +1007,18 @@ class TauDb
 
 		return $this->emptyValue();
 	}
+
+
+
+    /**
+     * Allow for raw SQL which has no munging.
+     *
+     * @param String $sql
+     */
+    public function raw($sql)
+    {
+        return new TauSqlExpression($sql);
+    }
 
 
 
@@ -1592,6 +1615,14 @@ class TauDb
 	{
 		return $this->inSetSql($field, $set, $negate);
 	}
+
+    public function in($field, $set = []) {
+        return $this->inSetSql($field, $set, false);
+    }
+
+    public function notIn($field, $set = []) {
+        return $this->inSetSql($field, $set, true);
+    }
 
 
 
