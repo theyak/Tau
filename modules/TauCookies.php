@@ -41,8 +41,7 @@ class TauCookies
 		}
 		
 		if (!empty($this->key)) {
-			$encrypt = new TauEncryption();
-			$value = $encrypt->encode($value, $this->key);
+			$value = TauCrypt::encrypt($value, $this->key);
 		}
 		
 		setcookie($name, $value, $expires, $path, $domain, $secure, $httpOnly);
@@ -55,11 +54,13 @@ class TauCookies
 			$name = $this->prefix . $name;
 		}
 		
-		if (isset($_COOKIE[$name])) 
-		{
+		if (isset($_COOKIE[$name])) {
 			if (!empty($this->key)) {
-				$encrypt = new TauEncryption();
-				$value = $encrypt->decode($_COOKIE[$name], $this->key);
+				$value = TauCrypt::decrypt($_COOKIE[$name], $this->key);
+				if (!$value) {
+					$encrypt = new TauEncryption();
+					$value = $encrypt->decode($_COOKIE[$name], $this->key);
+				}
 				return $value;
 			} else {
 				return $_COOKIE[$name];
