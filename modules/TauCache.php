@@ -64,7 +64,7 @@ class TauCache
 
 	public function set($key, $value, $ttl = 3600)
 	{
-		$this->driver->set($key, $value, $expires);
+		$this->driver->set($key, $value, $ttl);
 	}
 
 
@@ -73,7 +73,7 @@ class TauCache
 	{
 		if (!$this->driver->exists($key))
 		{
-			$this->driver->set($key, $value, $expires);
+			$this->driver->set($key, $value, $ttl);
 		}
 	}
 
