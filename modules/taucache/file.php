@@ -261,6 +261,7 @@ class TauCacheFile
 			unlink($this->path . $key . '.php');
 			error_reporting($old);
 		}
+        unset(static::$cache_results[$key]);
 	}
 
 
