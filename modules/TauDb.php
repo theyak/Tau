@@ -753,9 +753,8 @@ class TauDb
 	 */
 	public function insertMultiSql($table, $data)
 	{
-		if (!is_array($data) || sizeof($data) < 1)
-		{
-			return;
+		if (!is_array($data) || sizeof($data) < 1) {
+			return false;
 		}
 
 
@@ -763,25 +762,18 @@ class TauDb
 		$fieldNames = $values = $parts = array();
 		$record_number = 0;
 
-		foreach ($data AS $record)
-		{
+		foreach ($data AS $record) {
 			$values = array();
 			$record_number++;
-			if ($record_number === 1)
-			{
-				foreach ($record AS $fieldName => $value)
-				{
+			if ($record_number === 1) {
+				foreach ($record AS $fieldName => $value) {
 					$fieldNames[] = $this->fieldName($fieldName);
 					$values[] = $this->escape($value);
 				}
-			}
-			else
-			{
-				foreach ($record AS $fieldName => $value)
-				{
+			} else {
+				foreach ($record AS $fieldName => $value) {
 					$values[] = $this->escape($value);
 				}
-
 			}
 			$parts[] = '(' . implode(', ', $values) . ')';
 		}
@@ -1530,7 +1522,9 @@ class TauDb
 	public function insertMulti($table, $data)
 	{
 		$sql = $this->insertMultiSql($table, $data);
-		$this->query($sql);
+        if ($sql) {
+		    $this->query($sql);
+        }
 	}
 
 
