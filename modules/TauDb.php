@@ -756,7 +756,9 @@ class TauDb
 		if (!is_array($data) || sizeof($data) < 1) {
 			return false;
 		}
-
+		if (!is_array(reset($data))) {
+			return $this->insertSql($table, $data);
+		}
 
 		$table = $this->tableName($table);
 		$fieldNames = $values = $parts = array();
