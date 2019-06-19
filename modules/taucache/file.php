@@ -154,6 +154,14 @@ class TauCacheFile
 					{
 						$length = (int) fgets( $f );
 					}
+
+					if ($length <= 0)
+					{
+						fclose($f);
+						$this->remove($file);
+						return false;
+					}
+
 					$data = fread( $f, $length );
 					fclose( $f );
 					if ( strlen( $data ) === $length )
