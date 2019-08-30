@@ -988,6 +988,7 @@ class TauDb
 	{
 		if (is_null($value))                       return $this->nullValue();
 		if ($value === 'NOW()')                    return $this->now();
+        if ($value instanceof DateTime)            return $this->dbStringify($value->format('Y-m-d H:i:s'));
 		if ($value instanceof TauSqlExpression)    return $value->get();
 		if (is_string($value))                     return $this->dbStringify($value);
 		if (is_float($value))					   return $value;
