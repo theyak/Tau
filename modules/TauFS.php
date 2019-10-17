@@ -111,26 +111,18 @@ class TauFS
 	 *
 	 * @param string $dir
 	 */
-	public static function rmdir( $dir )
-	{	
-		// Make sure directory exists. Nothing to remove otherwise.
-		if ( ! is_dir( $dir ) ) {
-			return;
-		}
+	public static function rmdir($dir) {
+		$files = glob($dir);
 
-		$files = array_diff( scandir( $dir ), static::$exclude );
-		foreach ( $files AS $file )
-		{
-			if ( is_dir( $dir . '/' . $file ) )
-			{
-				static::rmdir( $dir . '/' . $file );
-			}
-			else
-			{
-				@unlink( $dir . '/' . $file );
+		foreach ($files as $file) {
+			if (!in_array($file, static::$exclude)) {
+				if (is_dir($file)) {
+					static::rmdir("$file/*");
+					rmdir($file);
+				} else {
+					unlink($file);
+				}
 			}
 		}
-
-		return rmdir( $dir );
-	}	
+	}
 }
