@@ -1,11 +1,10 @@
 <?php
 /**
- * File driver for TAU Cache module
+ * Null driver for TAU Cache module
  *
  * @Author          theyak
  * @Copyright       2015
  * @Project Page    None!
- * @Dependencies    TauError
  * @Documentation   None!
  *
  */
@@ -15,7 +14,7 @@ if (!defined('TAU'))
 	exit;
 }
 
-class TauCacheFile
+class TauCacheNull
 {
 	/**
 	 * Reference to cache container
@@ -32,9 +31,8 @@ class TauCacheFile
 	{
 		return false;
 	}
-	
 
-	function set($key, $value)
+	function set($key, $value, $ttl)
 	{
 		return false;
 	}
@@ -59,7 +57,7 @@ class TauCacheFile
 		return '';
 	}
 	
-	function setNote($node)
+	function setNote($note)
 	{
 		return false;
 	}
