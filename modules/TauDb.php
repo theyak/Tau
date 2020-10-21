@@ -6,7 +6,7 @@
  * @Copyright       2013
  * @Project Page    https://github.com/theyak/Tau
  * @Dependencies    TauError, TauFS
- * @Documentation   None!
+ * @Documentation   https://github.com/theyak/Tau/wiki/TauDb
  *
  * @example
  *
