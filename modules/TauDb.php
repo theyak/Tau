@@ -686,8 +686,8 @@ class TauDb
 	/**
 	 * Return a field name in SQL format
 	 *
-	 * @param type $fieldName
-	 * @return type
+	 * @param string $fieldName
+	 * @return string
 	 */
 	public function fieldName($fieldName)
 	{
@@ -699,8 +699,8 @@ class TauDb
 	/**
 	 * Return a field name in SQL format
 	 *
-	 * @param type $fieldName
-	 * @return type
+	 * @param string $fieldName
+	 * @return string
 	 */
 	public function tableName($fieldName)
 	{
@@ -792,8 +792,8 @@ class TauDb
 	 * Create SQL for an UPDATE statement
 	 *
 	 * @param string $table
-	 * @param string $update
-	 * @param string $where
+	 * @param array $update
+	 * @param string|array $where
 	 * @return string
 	 */
 	public function updateSql($table, $data, $where = '')
@@ -1536,7 +1536,7 @@ class TauDb
 	 *
 	 * @param string $table
 	 * @param array $values
-	 * @param string $where
+	 * @param string|array $where
 	 */
 	public function update($table, $values, $where)
 	{
