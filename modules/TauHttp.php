@@ -60,13 +60,13 @@ class TauHttp
 	public $responseCode = 0;
 	public $responseHeaders = array();
 	public $response = '';
+    public $error_number = 0;
 	public $error = '';
 
 	
 	function __construct($url = null) 
 	{
-		if (!is_null($url))
-		{
+		if (!is_null($url)) {
 			$this->setUrl($url);
 		}
 	}
@@ -125,24 +125,17 @@ class TauHttp
 		curl_setopt( $ch, CURLOPT_URL, $url );
 		$data = curl_exec( $ch );
 		
-		if ( $data !== false )
-		{
+		if ( $data !== false ) {
 			$lines = explode( "\n", $data );
-			foreach ( $lines AS $line )
-			{
+			foreach ( $lines AS $line ) {
 				$parts = explode( ':', $line, 2 );
-				if ( sizeof( $parts ) === 2 )
-				{
+				if ( sizeof( $parts ) === 2 ) {
 					$headers[ trim( $parts[ 0 ] ) ] = trim( $parts[ 1 ] ); 
-				}
-				else if ( substr( $line, 0, 4 ) === 'HTTP' )
-				{
+				} else if ( substr( $line, 0, 4 ) === 'HTTP' ) {
 					$headers[ 'http_code' ] = substr( $line, 9, 3 );
 				}
 			}
-		}
-		else
-		{
+		} else {
 			// Should this be 404 or something else?
 			$headers[ 'http_code' ] = 404;
 		}
@@ -171,19 +164,16 @@ class TauHttp
 		curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 		curl_setopt($ch, CURLOPT_HEADER, true);
-		if (sizeof($this->_post))
-		{
+		if (sizeof($this->_post)) {
 			curl_setopt($ch, CURLOPT_POST, true);
 			curl_setopt($ch, CURLOPT_POSTFIELDS, $this->_post);
 		}
 		
-		if (!empty($this->_agent))
-		{
+		if (!empty($this->_agent)) {
 			curl_setopt($ch, CURLOPT_USERAGENT,	$this->_agent);
 		}
 
-		if (!empty($this->_proxy_host))
-		{
+		if (!empty($this->_proxy_host)) {
 			curl_setopt($ch, CURLOPT_HTTPPROXYTUNNEL, TRUE);			
 			curl_setopt($ch, CURLOPT_PROXY, $this->_proxy_host);
 			curl_setopt($ch, CURLOPT_PROXYPORT, $this->_proxy_port);
@@ -202,12 +192,13 @@ class TauHttp
 
 		$this->info = curl_getinfo($ch);
 		$this->responseCode = $this->info['http_code'];
-
-		curl_close($ch);
+		$this->error_number = curl_errno($ch);
+		$this->error = curl_error($ch);
+        
+        curl_close($ch);
 
 		$this->responseHeaders = array();
-		while (substr($result, 0, 4) == 'HTTP')
-		{
+		while (substr($result, 0, 4) == 'HTTP') {
 			$parts = explode("\r\n\r\n", $result);
 			$part = array_shift($parts);
 			$lines = explode("\r\n", $part);
@@ -230,17 +221,15 @@ class TauHttp
 	public function setUserAgent($agent)
 	{
 		$agents = array(
-			'Firefox' => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0.1) Gecko/20100101 Firefox/6.0.1',
+			'Firefox' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0',
 			'IE8' => 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0)',
-			'Google' => 'Googlebot/2.1 (+http://www.google.com/bot.html)',
-		);
+			'Google' => 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/102.0.5005.115 Safari/537.36',
+			'Edge' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 Edge/16.16299"',
+        );
 		
-		if (isset($agents[$agent]))
-		{
+		if (isset($agents[$agent]))	{
 			$this->_agent = $agents[$agent];
-		}
-		else
-		{
+		} else {
 			$this->_agent = $agent;
 		}
 	}
@@ -252,15 +241,11 @@ class TauHttp
 	
 	public function setCookie($key, $value = null)
 	{
-		if (is_array($key))
-		{
-			foreach ($key AS $name => $value)
-			{
+		if (is_array($key)) {
+			foreach ($key AS $name => $value) {
 				$this->_cookies[] = $name . '=' . $value;
 			}
-		}
-		else
-		{
+		} else {
 			$this->_cookies[] = $key . '=' . $value;
 		}
 	}
@@ -268,12 +253,9 @@ class TauHttp
 	
 	public function setPostField($key, $value = null)
 	{
-		if (is_array($key))
-		{
+		if (is_array($key)) {
 			$this->_post = array_merge($this->_post, $key);
-		}
-		else
-		{
+		} else {
 			$this->_post[$key] = $value;
 		}
 	}
