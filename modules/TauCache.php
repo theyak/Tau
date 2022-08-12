@@ -172,11 +172,10 @@ class TauCache
 
 	public function queryLoad($query)
 	{
-		$query = trim( preg_replace('/[\n\r\s\t]+/', ' ', $query) );
+		$query = trim(preg_replace('/[\n\r\s\t]+/', ' ', $query));
 		$key = 'sql/' . md5($query);
 		$rows = $this->driver->get($key);
-		if ($rows === false)
-		{
+		if ($rows === false) {
 			return false;
 		}
 		$this->queries[$this->queryNumber] = $rows;
@@ -189,12 +188,11 @@ class TauCache
 	public function querySave($db, $resultSet, $query, $ttl)
 	{
 		$this->queries[$this->queryNumber] = array();
-		while ($row = $db->fetch($resultSet))
-		{
+		while ($row = $db->fetch($resultSet)) {
 			$this->queries[$this->queryNumber][] = $row;
 		}
 
-		$query = trim( preg_replace('/[\n\r\s\t]+/', ' ', $query) );
+		$query = trim(preg_replace('/[\n\r\s\t]+/', ' ', $query));
 		$key = 'sql/' . md5($query);
 		$this->driver->set($key, $this->queries[$this->queryNumber], $ttl, array( 'notes' => $query ) );
 		$this->queryIndex[$this->queryNumber] = 0;
@@ -206,7 +204,7 @@ class TauCache
 
 	public function queryRemove($query)
 	{
-		$query = preg_replace('/[\n\r\s\t]+/', ' ', $query);
+		$query = trim(preg_replace('/[\n\r\s\t]+/', ' ', $query));
 		$key = 'sql/' . md5($query);
 		$this->driver->remove($key);
 	}
