@@ -34,9 +34,10 @@ class TauHttp
 	private $_path = '';
 	private $_query = '';
 	private $_fragment = '';
-	private $_cookies = array();
+	private $_cookies = [];
 	private $_agent = 'Tau';
-	private $_post = array();
+	private $_post = [];
+    private $_headers = [];
 	
 	/**
 	 * Timeout value for connection to remote host
@@ -187,7 +188,11 @@ class TauHttp
 			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 		}
-		
+
+		if ($this->_headers) {
+			curl_setopt($ch, CURLOPT_HTTPHEADER, $this->_headers);
+		}
+        
 		$result = curl_exec($ch);
 
 		$this->info = curl_getinfo($ch);
@@ -279,7 +284,10 @@ class TauHttp
 	public function setProxyType($type) {
 		$this->_proxy_type = $type;
 	}
-	
+
+	public function addHeader($key, $value) {
+		$this->_headers[] = $key . ': ' . $value;
+	}
 
 	/**
 	 * Construct cookie header for sending to remote site
