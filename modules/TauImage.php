@@ -70,6 +70,10 @@ class TauImage
 					$this->_image = imagecreatefromwbmp($filename);
 				break;
 
+				case 'image/webp':
+					$this->_image = imagecreatefromwebp($filename);
+				break;                    
+                    
 				default:
 					throw new TauImageException(TauImageException::INVALID_FILETYPE);
 			}
@@ -83,7 +87,7 @@ class TauImage
 				$this->_width = imagesx($this->_image);
 				$this->_height = imagesy($this->_image);
 				$this->_mimetype = self::getMimeTypeFromString($filename);
-				if (!in_array($this->_mimetype, array('image/jpeg', 'image/gif', 'image/png', 'image/x-windows-bmp'))) {
+				if (!in_array($this->_mimetype, array('image/jpeg', 'image/gif', 'image/png', 'image/x-windows-bmp', 'image/webp'))) {
 					throw new TauImageException(TauImageException::INVALID_FILETYPE);
 				}
 			}
@@ -345,7 +349,7 @@ class TauImage
 	{
 		if (
 			!preg_match(
-				'/\A(?:(\xff\xd8\xff)|(GIF8[79]a)|(\x89PNG\x0d\x0a)|(BM)|(\x49\x49(\x2a\x00|\x00\x4a))|(FORM.{4}ILBM))/',
+				'/\A(?:(\xff\xd8\xff)|(GIF8[79]a)|(\x89PNG\x0d\x0a)|(BM)|(\x49\x49(?:\x2a\x00|\x00\x4a))|(FORM.{4}ILBM)|(RIFF....WEBPVP8))/',
 				$binary, $hits
 			)
 		) {
@@ -358,6 +362,7 @@ class TauImage
 			4 => 'image/x-windows-bmp',
 			5 => 'image/tiff',
 			6 => 'image/x-ilbm',
+            7 => 'image/webp',
 		);
 		return $type[count($hits) - 1];
 	}
@@ -366,7 +371,7 @@ class TauImage
 	{
 		if (
 			!preg_match(
-				'/\A(?:(\xff\xd8\xff)|(GIF8[79]a)|(\x89PNG\x0d\x0a)|(BM)|(\x49\x49(\x2a\x00|\x00\x4a))|(FORM.{4}ILBM))/',
+				'/\A(?:(\xff\xd8\xff)|(GIF8[79]a)|(\x89PNG\x0d\x0a)|(BM)|(\x49\x49(?:\x2a\x00|\x00\x4a))|(FORM.{4}ILBM)|(RIFF....WEBPVP8))/',
 				$binary, $hits
 			)
 		) {
@@ -378,7 +383,8 @@ class TauImage
 			3 => 'png',
 			4 => 'bmp',
 			5 => 'tiff',
-			6 => 'ilbm', // I really don't know on this one.
+			6 => 'ilbm',
+            7 => 'webp',
 		);
 		return $type[count($hits) - 1];
 	}
