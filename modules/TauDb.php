@@ -1754,10 +1754,15 @@ class TauDb
 	 * @param string $field Field name
 	 * @return array
 	 */
-	private function parse_where( $field ) {
+	private function parse_where( $field, $value = false ) {
 		$parts = explode( ' ', $field );
 		if ( sizeof( $parts ) == 1 ) {
-			return array( $field, '=' );
+			if ( $value === null ) {
+				return [ $field, 'is' ];
+			} else if ( is_array( $value ) ) {
+				return [ $field, 'in' ];
+			}
+			return [ $field, '=' ];
 		}
 		return $parts;
 	}
@@ -1771,7 +1776,7 @@ class TauDb
 	 * @return \TauDb
 	 */
 	public function where( $field, $value ) {
-		$parse = $this->parse_where( $field );
+		$parse = $this->parse_where( $field, $value );
 
 		$this->where[] = array(
 			'field' => $parse[ 0 ],
@@ -1791,7 +1796,7 @@ class TauDb
 	 * @return \TauDb
 	 */
 	public function or_where( $field, $value ) {
-		$parse = $this->parse_where( $field );
+		$parse = $this->parse_where( $field, $value );
 
 		$this->where[] = array(
 			'field' => $parse[ 0 ],
@@ -1848,9 +1853,9 @@ class TauDb
 			if ( empty( $this->from ) ) {
 				return '';
 			}
-			$sql = "SELECT" . $fields . "\n  FROM " . $this->from;
+			$sql = "SELECT" . $fields . "\n  FROM " . $this->tableName( $this->from );
 		} else {
-			$sql = "SELECT" . $fields . "\n  FROM " . $table;
+			$sql = "SELECT" . $fields . "\n  FROM " . $this->tableName( $table );
 		}
 
 		if (sizeof($this->where))
@@ -1876,7 +1881,25 @@ class TauDb
 		return $sql;
 	}
 
+	public function column() {
+		$sql = $this->sql();
+		return $this->fetchColumn($sql);
+	}
 
+	public function first() {
+		$sql = $this->sql();
+		return $this->fetchOneObject($sql);
+	}
+
+	public function all() {
+		$sql = $this->sql();
+		return $this->fetchAllObject($sql);
+	}
+
+	public function value() {
+		$sql = $this->sql();
+		return $this->fetchValue($sql);
+	}
 
 	/**
 	 * Get a more precise system time compared to microtime(true).
