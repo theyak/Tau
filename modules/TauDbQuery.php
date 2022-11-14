@@ -114,6 +114,25 @@ class TauDbQuery
     public $db;
 
     /**
+     * Class name to cast results to
+     *
+     * @var string
+     */
+    public $cast;
+
+    /**
+     * Whether to cast all properties or just those that exist in destination class
+     *
+     * @var bool
+     */
+    public $allProperties = false;
+
+    /**
+     * Time to live for cache
+     */
+    public $ttl = 0;
+
+    /**
      * All of the available clause operators.
      * Ripped from Laravel which I just looked at for the first time.
      * Their code is really nice!
@@ -178,6 +197,30 @@ class TauDbQuery
         if ($where) {
             $this->where($where);
         }
+    }
+
+    /**
+     * Type to cast result to
+     *
+     * @param  string $class Name of class
+     * @return $this
+     */
+    function cast($class, $allProperties = false) {
+        $this->cast = $class;
+        $this->allProperties = $allProperties;
+
+        return $this;
+    }
+
+    /**
+     * Time to live if cache is in use in TauDb object
+     *
+     * @param  int $ttl Time to live, in seconds
+     * @return $this
+     */
+    function ttl($ttl) {
+        $this->ttl = (int)$ttl;
+        return $this;
     }
 
     /**
@@ -384,7 +427,7 @@ class TauDbQuery
     public function value()
     {
         $sql = $this->buildSelectQuery();
-        return $this->db->fetchValue($sql);
+        return $this->db->fetchValue($sql, $this->ttl);
     }
 
     /**
@@ -395,7 +438,7 @@ class TauDbQuery
     public function column()
     {
         $sql = $this->buildSelectQuery();
-        return $this->db->fetchColumn($sql);
+        return $this->db->fetchColumn($sql, $this->ttl);
     }
 
     /**
@@ -407,7 +450,7 @@ class TauDbQuery
     public function pairs()
     {
         $sql = $this->buildSelectQuery();
-        return $this->db->fetchPairs($sql);
+        return $this->db->fetchPairs($sql, $this->ttl);
     }
 
     /**
@@ -418,7 +461,13 @@ class TauDbQuery
     public function first()
     {
         $sql = $this->buildSelectQuery();
-        return $this->db->fetchOneObject($sql);
+        $row = $this->db->fetchOneObject($sql, $this->ttl);
+
+        if ($this->cast) {
+            $row = $this->doCast($this->cast, $row, $this->allProperties);
+        }
+
+        return $row;
     }
 
     /**
@@ -434,17 +483,75 @@ class TauDbQuery
 
         if ($id) {
             if (is_string($id)) {
-                $rows = $this->db->fetchAllWithId($sql, $id);
+                $rows = $this->db->fetchAllWithId($sql, $id, $this->ttl);
             } else {
-                $rows = $this->db->fetchAllWithId($sql);
+                $rows = $this->db->fetchAllWithId($sql, '', $this->ttl);
             }
         } else {
-            $rows = $this->db->fetchAll($sql);
+            $rows = $this->db->fetchAll($sql, $this->ttl);
         }
 
-        $rows = array_map(fn($row) => (object) $row, $rows);
+        $rows = array_map(fn ($row) => (object) $row, $rows);
+
+        if ($this->cast) {
+            $rows = array_map(fn ($row) => $this->doCast($this->cast, $row, $this->allProperties), $rows);
+        }
 
         return $rows;
+    }
+
+
+    /**
+     * Cast an object of one type (usually stdclass) to another via shallow copy.
+     * A best guess of property type is made based on doc blocks or defined type.
+     *
+     * @param  string Class name for destination class
+     * @param  object Source class to cast from
+     * @param  bool   Whether to copy all properties, regardless if they've been defined in class
+     * @return object Casted object
+     */
+    function doCast($dest, $source, $allProperties = false) {
+        $cast = new $dest;
+
+        $ref = new ReflectionClass($cast);
+
+        // Get source properties and type
+        $properties = [];
+        foreach ($ref->getProperties() as $property) {
+            $type = $property->getType();
+            if ($type) {
+                $type = $type->getName();
+            }
+            if (!$type && preg_match('/@var\s+([^\s]+)/', $property->getDocComment(), $matches)) {
+                list(, $type) = $matches;
+            }
+            if (!$type && is_int($cast->{$property->name})) {
+                $type = 'int';
+            }
+            if (!$type && is_bool($cast->{$property->name})) {
+                $type = 'bool';
+            }
+            $properties[$property->name] = $type ?? 'string';
+        }
+
+        foreach ($source as $field => $data) {
+            if (isset($properties[$field])) {
+                $type = $properties[$field];
+                if ($type === 'int') {
+                    $cast->$field = (int)$data;
+                } else if ($type === 'bool' || $type === 'boolean') {
+                    $cast->$field = (bool)$data;
+                } else if ($type === 'float') {
+                    $cast->$field = (float)$data;
+                } else {
+                    $cast->$field = $data;
+                }
+            } else if ($allProperties) {
+                $cast->$field = $data;
+            }
+        }
+
+        return $cast;
     }
 
     /**
