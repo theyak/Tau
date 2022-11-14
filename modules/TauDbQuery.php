@@ -49,8 +49,18 @@
  *     ->where("user_id", "<=", 10)
  *     ->column()
  *
- * When using TauDB, you will often have a single global variable referencing the
- * TauDB object. The following example shows usage of a function to use the
+ * // You can also cast to objects and use the TauDb cache
+ * $sq = new TauDbQuery($db)
+ *     ->table("users")
+ *     ->select("first_name", "last_name")
+ *     ->where("user_id", "<=", 100)
+ *     ->orderBy("user_id")
+ *     ->cast(User::class)
+ *     ->ttl(30)
+ *     ->fetch();
+ *
+ * When using TauDb, you will often have a single global variable referencing the
+ * TauDb object. The following example shows usage of a function to use the
  * query builder.
  *
  * function qb($table = null) {
@@ -107,7 +117,7 @@ class TauDbQuery
 
 
     /**
-     * The TauDB instance for the builder
+     * The TauDb instance for the builder
      *
      * @var TauDb
      */
@@ -224,7 +234,7 @@ class TauDbQuery
     }
 
     /**
-     * Set TauDB object to use for queries
+     * Set TauDb object to use for queries
      *
      * @param  TauDb $db
      * @return $this
