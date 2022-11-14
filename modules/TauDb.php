@@ -535,7 +535,7 @@ class TauDb
 	/**
 	 * @abstract
 	 */
-	public function dbStringify($string)
+	public function dbStringify($string, $quote = true)
 	{
 		TauError::fatal('dbStringify() method not defined.');
 	}
@@ -659,7 +659,8 @@ class TauDb
 	 * Encode a string into a string suitable for use in a SQL statement,
 	 * including proper escaping and quotations around value.
 	 *
-	 * @param type $string
+	 * @param  string $string String to escape
+	 * @param  bool $quote Whether string should be wrapped in quotes
 	 * @return string
 	 */
 	public function stringify($string, $quote = true)
@@ -1575,10 +1576,10 @@ class TauDb
 
 
 	/**
-	 * Perform an INSERT/UPDATE based on duplicate keys. This 
+	 * Perform an INSERT/UPDATE based on duplicate keys. This
 	 * differs from insertUpdate() in that it is based solely
 	 * on database keys, not a where value
-	 * 
+	 *
 	 * @param string $table
 	 * @param array $insert
 	 * @param array $update
@@ -1594,7 +1595,7 @@ class TauDb
 		{
 			$update = $insert;
 		}
-		
+
 		$this->dbUpsert( $table, $insert, $update );
 	}
 

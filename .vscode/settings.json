@@ -1,0 +1,7 @@
+{
+    "[phps]": {
+        "editor.defaultFormatter": "DEVSENSE.phptools-vscode",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4
+    }
+}

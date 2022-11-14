@@ -25,14 +25,14 @@ class TauMysqli extends TauDb
 	 * @var resource
 	 */
 	private $resultSet;
-	
+
 	/**
 	 * Last query
 	 * @param string $query
 	 */
 	private $query = '';
-	
-	
+
+
 	function __construct($server)
 	{
 		$this->server = $server;
@@ -71,7 +71,7 @@ class TauMysqli extends TauDb
 							'or an invalid username and password combination was supplied.<br><br>',
 							'You will need to grant access to the database for user ' . $this->server->username,
 							' with something like:<br><br>',
-							'&nbsp;&nbsp;&nbsp;&nbsp;GRANT ALL ON ' . $this->server->database . 
+							'&nbsp;&nbsp;&nbsp;&nbsp;GRANT ALL ON ' . $this->server->database .
 							'.* TO ' . $this->server->username,
 							'@\'%\' IDENTIFIED BY \'PASSWORD\'',
 							'<br><br>Please see <a href="http://www.cyberciti.biz/tips/',
@@ -106,7 +106,7 @@ class TauMysqli extends TauDb
 	{
 		if ($database)
 		{
-			if (!@mysqli_select_db($database))
+			if (!@mysqli_select_db($this->server->connection, $database))
 			{
 				TauError::fatal('Invalid database');
 			}
@@ -132,7 +132,7 @@ class TauMysqli extends TauDb
 	/**
 	 * Make a query to the database server
 	 * @param string $sql
-	 * @return handle
+	 * @return resource|null
 	 */
 	public function dbQuery($sql)
 	{
@@ -146,13 +146,14 @@ class TauMysqli extends TauDb
 			$this->resultSet = mysqli_query($this->server->connection, $sql);
 			return $this->resultSet;
 		}
+		return null;
 	}
 
 
 
 	/**
 	 * Release a result set from memory
-	 * @param handle $resultSet
+	 * @param mysqli_result $resultSet
 	 */
 	public function dbFreeResult($resultSet = null)
 	{
@@ -182,6 +183,8 @@ class TauMysqli extends TauDb
 		{
 			return mysqli_error($this->server->connection);
 		}
+
+		return "No connection";
 	}
 
 
@@ -240,7 +243,7 @@ class TauMysqli extends TauDb
 	/**
 	 * Encode a timestamp in any of the standard PHP formats accepted
 	 * by DateTime() and strtotime() to database format
-	 * 
+	 *
 	 * @param mixed $time
 	 * @return string
 	 */
@@ -255,13 +258,13 @@ class TauMysqli extends TauDb
 	/**
 	 * Escape a string for insertion in to database
 	 *
-	 * @param type $unescaped_string
+	 * @param string $unescaped_string
 	 * @return string
 	 */
 	public function dbEscape($unescaped_string)
 	{
 		$this->connect();
-		
+
 		return @mysqli_real_escape_string($this->server->connection, $unescaped_string);
 	}
 
@@ -269,8 +272,8 @@ class TauMysqli extends TauDb
 
 	/**
 	 * Fetch a row from the database
-	 * @param handle $resultSet
-	 * @return assoc|false
+	 * @param mysqli_result $resultSet
+	 * @return array|false
 	 */
 	protected function dbFetch($resultSet)
 	{
@@ -280,8 +283,8 @@ class TauMysqli extends TauDb
 
 	/**
 	 * Fetch a row from the database as on object
-	 * @param handle $resultSet
-	 * @return assoc|false
+	 * @param mysqli_result $resultSet
+	 * @return array|false
 	 */
 	protected function dbFetchObject($resultSet)
 	{
@@ -292,8 +295,8 @@ class TauMysqli extends TauDb
 
 	/**
 	 * Fetch all rows from the database
-	 * @param handle $resultSet
-	 * @return assoc
+	 * @param mysqli_result $resultSet
+	 * @return array
 	 */
 	protected function dbFetchAll($resultSet)
 	{
@@ -310,8 +313,8 @@ class TauMysqli extends TauDb
 	/**
 	 * Retrieve all rows, each row as an object, from an SQL query
 	 *
-	 * @param handle $resultSet
-	 * @return assoc An array of records retrieved, each record as an object.
+	 * @param mysqli_result $resultSet
+	 * @return array An array of records retrieved, each record as an object.
 	 */
 	protected function dbFetchAllObject($resultSet)
 	{
@@ -322,15 +325,15 @@ class TauMysqli extends TauDb
 		}
 		return $rows;
 	}
-	
-	
+
+
 
 	/**
 	 * Fetch all rows from the database storing data in an associative array
 	 *
-	 * @param handle $resultSet
-	 * @param $id Name of field to use as ID. If left blank, the first field is used.
-	 * @return assoc
+	 * @param mysqli_result $resultSet
+	 * @param string $id Name of field to use as ID. If left blank, the first field is used.
+	 * @return array
 	 */
 	protected function dbFetchAllWithId($resultSet, $id = '')
 	{
@@ -353,7 +356,7 @@ class TauMysqli extends TauDb
 
 	/**
 	 * Get the ID from the last insert
-	 * @return vararr
+	 * @return int
 	 */
 	public function insertId()
 	{
@@ -371,7 +374,7 @@ class TauMysqli extends TauDb
 		return @mysqli_affected_rows($this->server->connection);
 	}
 
-	
+
 
 	/**
 	 * Get number of rows returned in last query
@@ -382,7 +385,7 @@ class TauMysqli extends TauDb
 		return @mysqli_num_rows($this->resultSet);
 	}
 
-	
+
 
 	/**
 	 * Determine if table exists in database
@@ -468,12 +471,12 @@ class TauMysqli extends TauDb
 		$sql .= ' ON DUPLICATE KEY UPDATE ';
 
 		$values = array();
-		foreach ( $update AS $fieldName => $value )
+		foreach ( $update as $fieldName => $value )
 		{
 			$values[] = $this->fieldName( $fieldName ) . ' = ' . $this->escape( $value );
 		}
 		$sql .= implode(', ', $values);
 
 		$this->query( $sql );
-	}	
+	}
 }
