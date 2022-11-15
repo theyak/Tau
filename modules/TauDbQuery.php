@@ -32,7 +32,7 @@
  *         $t->where("user_id", ">=", 100);
  *         $t->where("user_id", "<=", 1000);
  *     })
- *     ->orderBy("user_id")
+ *     ->order("user_id")
  *     ->fetch();
  *
  * // Get user ids and usernames for all ids <= 10
@@ -54,7 +54,7 @@
  *     ->table("users")
  *     ->select("first_name", "last_name")
  *     ->where("user_id", "<=", 100)
- *     ->orderBy("user_id")
+ *     ->order("user_id")
  *     ->cast(User::class)
  *     ->ttl(30)
  *     ->fetch();
@@ -398,7 +398,7 @@ class TauDbQuery
      * @param  bool|"desc" $desc
      * @return $this
      */
-    public function orderBy($field, $desc = false)
+    public function order($field, $desc = false)
     {
         $this->orderBys[] = [$field, $desc === true || $desc === "desc"];
         return $this;
@@ -438,6 +438,24 @@ class TauDbQuery
     {
         $sql = $this->buildSelectQuery();
         return $this->db->fetchValue($sql, $this->ttl);
+    }
+
+    /**
+     * Pluck the values of a column, or key/value pairs
+     *
+     * @param  string $column
+     * @param  string $key If provided, uses column as a key to result set
+     * @return array
+     */
+    public function pluck($column, $key = null)
+    {
+        if ($key) {
+            $this->fields = [$key, $column];
+            return $this->pairs();
+        } else {
+            $this->fields = [$column];
+            return $this->column();
+        }
     }
 
     /**
