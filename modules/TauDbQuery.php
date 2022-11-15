@@ -40,7 +40,7 @@
  *     ->table("users")
  *     ->select("user_id", "username")
  *     ->where("user_id", "<=", 10)
- *     ->pairs()
+ *     ->map()
  *
  * // Get usernames for all ids <= 10
  * $sq = new TauDbQuery($db)
@@ -451,7 +451,7 @@ class TauDbQuery
     {
         if ($key) {
             $this->fields = [$key, $column];
-            return $this->pairs();
+            return $this->map();
         } else {
             $this->fields = [$column];
             return $this->column();
@@ -528,12 +528,12 @@ class TauDbQuery
     }
 
     /**
-     * Fetch pairs from the database. First value in result set is used as
-     * array key and second value in result set is set as value.
+     * Fetch key value pairs from the database. First value in result set is
+     * used as array key and second value in result set is set as value.
      *
      * @return array
      */
-    public function pairs()
+    public function map()
     {
         $sql = $this->buildSelectQuery();
         return $this->db->fetchPairs($sql, $this->ttl);
