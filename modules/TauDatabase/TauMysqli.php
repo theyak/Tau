@@ -197,11 +197,9 @@ class TauMysqli extends TauDb
 	 */
 	public function dbFieldName($fieldName)
 	{
-		$this->connect();
-
 		$parts = explode('.', $fieldName);
 		foreach($parts AS $key => $value) {
-			$parts[$key] = '`' . @mysqli_real_escape_string($this->server->connection, trim($value, '`')) . '`';
+			$parts[$key] = '`' . $this->dbEscape(trim($value, '`')) . '`';
 		}
 
 		return implode('.', $parts);
@@ -263,9 +261,13 @@ class TauMysqli extends TauDb
 	 */
 	public function dbEscape($unescaped_string)
 	{
-		$this->connect();
-
-		return @mysqli_real_escape_string($this->server->connection, $unescaped_string);
+		if ($this->server->connection) {
+			return @mysqli_real_escape_string($this->server->connection, $unescaped_string);
+		} else {
+			$search = ["'", '"', chr(0), "\n", "\r", chr(26), '\\'];
+			$replace = ["\\'", "\\0", "\\n", "\\r", "\\Z", "\\\\"];
+			return str_replace($search, $replace, $unescaped_string);
+		}
 	}
 
 

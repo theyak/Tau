@@ -40,7 +40,7 @@
  *     ->table("users")
  *     ->select("user_id", "username")
  *     ->where("user_id", "<=", 10)
- *     ->map()
+ *     ->pairs()
  *
  * // Get usernames for all ids <= 10
  * $sq = new TauDbQuery($db)
@@ -63,12 +63,12 @@
  * TauDb object. The following example shows usage of a function to use the
  * query builder.
  *
- * function qb($table = null) {
+ * function db($table = null) {
  *   global $db;
  *   return new TauDbQuery($db, $table);
  * }
  *
- * qb('users')->select('username')->where('user_id', 12)->first();
+ * db('users')->select('username')->where('user_id', 12)->first();
  */
 
 class TauDbQuery
@@ -340,14 +340,14 @@ class TauDbQuery
      * Add a basic where clause to the query.
      *
      * @param  string|array|Closure $field
-     * @param  mixed $comparison
+     * @param  mixed $operation
      * @param  mixed $value
      * @return $this
      */
-    public function where($field, $comparison = null, $value = null, $type = 'and')
+    public function where($field, $operation = null, $value = null, $type = 'and')
     {
-        if (is_string($comparison)) {
-            $comparison = strtolower($comparison);
+        if (is_string($operation)) {
+            $operation = strtolower($operation);
         }
 
         if ($field instanceof Closure) {
@@ -358,14 +358,14 @@ class TauDbQuery
         }
 
         // Allow short circuiting by defaulting the an "=", "is", or "in" comparison
-        if (is_null($value) && !in_array($comparison, static::$operators)) {
-            $value = $comparison;
+        if (is_null($value) && !in_array($operation, static::$operators)) {
+            $value = $operation;
             if ($value === null) {
-                $comparison = "is";
+                $operation = "is";
             } else if (is_array($value)) {
-                $comparison = "in";
+                $operation = "in";
             } else {
-                $comparison = "=";
+                $operation = "=";
             }
         }
 
@@ -381,10 +381,10 @@ class TauDbQuery
     /**
      * @param string|Closure $callable
      */
-    public function orWhere($callable, $comparison = null, $value = null)
+    public function orWhere($callable, $operation = null, $value = null)
     {
         if (is_string($callable)) {
-            $this->where($callable, $comparison, $value, 'or');
+            $this->where($callable, $operation, $value, 'or');
         } else if ($callable instanceof Closure) {
             $this->where($callable, null, null, 'or');
         }
@@ -451,7 +451,7 @@ class TauDbQuery
     {
         if ($key) {
             $this->fields = [$key, $column];
-            return $this->map();
+            return $this->pairs();
         } else {
             $this->fields = [$column];
             return $this->column();
@@ -533,7 +533,7 @@ class TauDbQuery
      *
      * @return array
      */
-    public function map()
+    public function pairs()
     {
         $sql = $this->buildSelectQuery();
         return $this->db->fetchPairs($sql, $this->ttl);
@@ -670,13 +670,43 @@ class TauDbQuery
     }
 
     /**
+     * Get table name to use in a query. This is generally specified
+     * via the table() method but may also be specified by a
+     * #[dbtable('table_name')] attribute in a casted class.
+     *
+     * @return string|bool
+     */
+    public function getTable() {
+        if ($this->table) {
+            return $this->db->tableName($this->table);
+        }
+
+        if (!$this->cast) {
+            return false;
+        }
+
+        if (PHP_VERSION_ID > 80000) {
+            $ref = new ReflectionClass($this->cast);
+            $attributes = $ref->getAttributes();
+            foreach ($attributes as $attr) {
+                if ($attr->getName() === 'dbtable') {
+                    return $this->db->tableName($attr->getArguments()[0]);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Build the SQL query
      *
      * @return string
      */
     public function buildSelectQuery()
     {
-        if (!$this->table) {
+        $table = $this->getTable();
+        if (!$table) {
             throw new RuntimeException("Missing table");
         }
 
@@ -687,7 +717,7 @@ class TauDbQuery
             $fields = "*";
         }
 
-        $sql = "SELECT {$fields} FROM " . $this->db->tableName($this->table);
+        $sql = "SELECT {$fields} FROM {$table}";
 
         if ($this->wheres) {
             $sql .= ' ' . $this->buildWhere($this->wheres);
