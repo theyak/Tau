@@ -215,7 +215,8 @@ class TauDbQuery
      * @param  string $class Name of class
      * @return $this
      */
-    function cast($class, $allProperties = false) {
+    function cast($class, $allProperties = false)
+    {
         $this->cast = $class;
         $this->allProperties = $allProperties;
 
@@ -228,8 +229,9 @@ class TauDbQuery
      * @param  int $ttl Time to live, in seconds
      * @return $this
      */
-    function ttl($ttl) {
-        $this->ttl = (int)$ttl;
+    function ttl($ttl)
+    {
+        $this->ttl = (int) $ttl;
         return $this;
     }
 
@@ -344,14 +346,28 @@ class TauDbQuery
      * @param  mixed $value
      * @return $this
      */
-    public function where($field, $operation = null, $value = null, $type = 'and')
+    public function where($field, $operation = null, $value = null, $type = "and")
     {
         if (is_string($operation)) {
             $operation = strtolower($operation);
         }
 
+        // A key/value array is often used as a shortcut for multiple
+        // where() calls. This may look like ["col1" => $val1, "col2" => $val2]
+        if (is_array($field)) {
+            if (in_array($operation, ["where", "and", "or"])) {
+                $this->whereArray($field, $operation);
+            } else {
+                $this->whereArray($field, $type);
+            }
+            return $this;
+        }
+
         if ($field instanceof Closure) {
-            $b = new static ();
+            if (in_array($operation, ["and", "or", "where"])) {
+                $type = $operation;
+            }
+            $b = new self();
             call_user_func_array($field, [&$b]);
             $this->wheres[] = [$type, $b];
             return $this;
@@ -373,7 +389,23 @@ class TauDbQuery
             $type = 'where';
         }
 
-        $this->wheres[] = [$type, compact("field", "comparison", "value")];
+        $this->wheres[] = [$type, compact("field", "operation", "value")];
+
+        return $this;
+    }
+
+    // Does $operation mean opeartion between elements or something like OR (col1 = 1 AND col2 = 2)
+    public function whereArray($keyval, $type = "and")
+    {
+        $b = new self();
+        foreach ($keyval as $key => $value) {
+            $b->where($key, "=", $value);
+        }
+
+        if (!$this->wheres) {
+            $type = 'where';
+        }
+        $this->wheres[] = [$type, $b];
 
         return $this;
     }
@@ -577,10 +609,10 @@ class TauDbQuery
             $rows = $this->db->fetchAll($sql, $this->ttl);
         }
 
-        $rows = array_map(fn ($row) => (object) $row, $rows);
+        $rows = array_map(fn($row) => (object) $row, $rows);
 
         if ($this->cast) {
-            $rows = array_map(fn ($row) => $this->doCast($this->cast, $row, $this->allProperties), $rows);
+            $rows = array_map(fn($row) => $this->doCast($this->cast, $row, $this->allProperties), $rows);
         }
 
         return $rows;
@@ -596,7 +628,8 @@ class TauDbQuery
      * @param  bool   Whether to copy all properties, regardless if they've been defined in class
      * @return object Casted object
      */
-    function doCast($dest, $source, $allProperties = false) {
+    function doCast($dest, $source, $allProperties = false)
+    {
         $cast = new $dest;
 
         $ref = new ReflectionClass($cast);
@@ -624,11 +657,11 @@ class TauDbQuery
             if (isset($properties[$field])) {
                 $type = $properties[$field];
                 if ($type === 'int') {
-                    $cast->$field = (int)$data;
+                    $cast->$field = (int) $data;
                 } else if ($type === 'bool' || $type === 'boolean') {
-                    $cast->$field = (bool)$data;
+                    $cast->$field = (bool) $data;
                 } else if ($type === 'float') {
-                    $cast->$field = (float)$data;
+                    $cast->$field = (float) $data;
                 } else {
                     $cast->$field = $data;
                 }
@@ -655,14 +688,14 @@ class TauDbQuery
         }
 
         foreach ($wheres as $where) {
-            if (isset($where[1]) && $where[1] instanceof static ) {
-                $sql .= ' ' . $where[0] . ' (' . substr($this->buildWhere($where[1]->wheres), 6) . ')';
+            if (isset($where[1]) && $where[1] instanceof self) {
+                $sql .= ' ' . strtoupper($where[0]) . ' (' . substr($this->buildWhere($where[1]->wheres), 7) . ')';
                 continue;
             }
 
             $sql .= ' ' . strtoupper($where[0]) . ' ';
             $sql .= $this->db->fieldName($where[1]['field']);
-            $sql .= ' ' . $where[1]['comparison'] . ' ';
+            $sql .= ' ' . strtoupper($where[1]['operation']) . ' ';
             $sql .= $this->db->escape($where[1]['value']);
         }
 
@@ -676,7 +709,8 @@ class TauDbQuery
      *
      * @return string|bool
      */
-    public function getTable() {
+    public function getTable()
+    {
         if ($this->table) {
             return $this->db->tableName($this->table);
         }
@@ -720,7 +754,7 @@ class TauDbQuery
         $sql = "SELECT {$fields} FROM {$table}";
 
         if ($this->wheres) {
-            $sql .= ' ' . $this->buildWhere($this->wheres);
+            $sql .= $this->buildWhere($this->wheres);
         }
 
         if ($this->orderBys) {

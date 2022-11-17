@@ -13,8 +13,7 @@
  *   1.0.1  Mar 26, 2014  Add dbDatetime
  */
 
-if (!defined('TAU'))
-{
+if (!defined('TAU')) {
 	exit;
 }
 
@@ -37,21 +36,18 @@ class TauMysqli extends TauDb
 	{
 		$this->server = $server;
 
-		if (empty($server->host))
-		{
+		if (empty($server->host)) {
 			$this->server->host = '127.0.0.1';
 		}
 
-		if (empty($server->port))
-		{
+		if (empty($server->port)) {
 			$this->server->port = 3306;
 		}
 	}
 
 	function connect()
 	{
-		if (!$this->server->connection)
-		{
+		if (!$this->server->connection) {
 			$this->server->connection = mysqli_connect(
 				$this->server->host,
 				$this->server->username,
@@ -60,12 +56,9 @@ class TauMysqli extends TauDb
 				$this->server->port
 			);
 
-			if ($this->server->terminate_on_error)
-			{
-				if (!$this->server->connection)
-				{
-					if ($this->server->host === '127.0.0.1' || $this->server->host === 'localhost')
-					{
+			if ($this->server->terminate_on_error) {
+				if (!$this->server->connection) {
+					if ($this->server->host === '127.0.0.1' || $this->server->host === 'localhost') {
 						$message = array(
 							'Unable to connect to database. The database server is either down ',
 							'or an invalid username and password combination was supplied.<br><br>',
@@ -80,14 +73,10 @@ class TauMysqli extends TauDb
 							'for more information.',
 						);
 						TauError::fatal(implode('', $message));
-					}
-					else
-					{
+					} else {
 						TauError::fatal('Unable to connect to database.');
 					}
-				}
-				else
-				{
+				} else {
 					mysqli_set_charset($this->server->connection, "utf8");
 				}
 			}
@@ -104,10 +93,8 @@ class TauMysqli extends TauDb
 	 */
 	public function dbUseDatabase($database)
 	{
-		if ($database)
-		{
-			if (!@mysqli_select_db($this->server->connection, $database))
-			{
+		if ($database) {
+			if (!@mysqli_select_db($this->server->connection, $database)) {
 				TauError::fatal('Invalid database');
 			}
 		}
@@ -120,8 +107,7 @@ class TauMysqli extends TauDb
 	 */
 	public function close()
 	{
-		if ($this->server->connection)
-		{
+		if ($this->server->connection) {
 			@mysqli_close($this->server->connection);
 			$this->server->connection = false;
 		}
@@ -136,13 +122,11 @@ class TauMysqli extends TauDb
 	 */
 	public function dbQuery($sql)
 	{
-		if (!$this->server->connection)
-		{
+		if (!$this->server->connection) {
 			$this->connect();
 		}
 		$this->query = $sql;
-		if ($this->server->connection)
-		{
+		if ($this->server->connection) {
 			$this->resultSet = mysqli_query($this->server->connection, $sql);
 			return $this->resultSet;
 		}
@@ -157,16 +141,12 @@ class TauMysqli extends TauDb
 	 */
 	public function dbFreeResult($resultSet = null)
 	{
-		if ($resultSet == null)
-		{
-			if ($this->resultSet != null)
-			{
+		if ($resultSet == null) {
+			if ($this->resultSet != null) {
 				@mysqli_free_result($this->resultSet);
 				$this->resultSet = null;
 			}
-		}
-		else
-		{
+		} else {
 			@mysqli_free_result($resultSet);
 		}
 	}
@@ -179,8 +159,7 @@ class TauMysqli extends TauDb
 	 */
 	public function dbError()
 	{
-		if ($this->server->connection)
-		{
+		if ($this->server->connection) {
 			return mysqli_error($this->server->connection);
 		}
 
@@ -198,7 +177,7 @@ class TauMysqli extends TauDb
 	public function dbFieldName($fieldName)
 	{
 		$parts = explode('.', $fieldName);
-		foreach($parts AS $key => $value) {
+		foreach ($parts as $key => $value) {
 			$parts[$key] = '`' . $this->dbEscape(trim($value, '`')) . '`';
 		}
 
@@ -227,12 +206,10 @@ class TauMysqli extends TauDb
 	 */
 	public function dbStringify($unescaped_string, $quote = true)
 	{
-		$this->connect();
-
 		if ($quote) {
-			return "'" . @mysqli_real_escape_string($this->server->connection, $unescaped_string) . "'";
+			return "'" . $this->dbEscape($unescaped_string) . "'";
 		} else {
-			return mysqli_real_escape_string($this->server->connection, $unescaped_string);
+			return $this->dbEscape($unescaped_string);
 		}
 	}
 
@@ -245,10 +222,10 @@ class TauMysqli extends TauDb
 	 * @param mixed $time
 	 * @return string
 	 */
-	public function dbDateTime( $time )
+	public function dbDateTime($time)
 	{
-		$datetime = new DateTime( $time );
-		return $datetime->format( 'Y-m-d H:i:s' );
+		$datetime = new DateTime($time);
+		return $datetime->format('Y-m-d H:i:s');
 	}
 
 
@@ -303,8 +280,7 @@ class TauMysqli extends TauDb
 	protected function dbFetchAll($resultSet)
 	{
 		$rows = array();
-		while ($row = @mysqli_fetch_assoc($resultSet))
-		{
+		while ($row = @mysqli_fetch_assoc($resultSet)) {
 			$rows[] = $row;
 		}
 
@@ -321,8 +297,7 @@ class TauMysqli extends TauDb
 	protected function dbFetchAllObject($resultSet)
 	{
 		$rows = array();
-		while ($row = @mysqli_fetch_object($resultSet))
-		{
+		while ($row = @mysqli_fetch_object($resultSet)) {
 			$rows[] = $row;
 		}
 		return $rows;
@@ -340,14 +315,10 @@ class TauMysqli extends TauDb
 	protected function dbFetchAllWithId($resultSet, $id = '')
 	{
 		$rows = array();
-		while ($row = @mysqli_fetch_assoc($resultSet))
-		{
-			if ($id && isset($row[$id]))
-			{
+		while ($row = @mysqli_fetch_assoc($resultSet)) {
+			if ($id && isset($row[$id])) {
 				$rows[$row[$id]] = $row;
-			}
-			else
-			{
+			} else {
 				$rows[reset($row)] = $row;
 			}
 		}
@@ -402,8 +373,7 @@ class TauMysqli extends TauDb
 			WHERE `table_schema` = ' . $this->dbStringify($dbName) . '
 				AND table_name = ' . $this->dbStringify($table);
 		$resultSet = $this->select($sql);
-		if ($row = $this->fetch($resultSet))
-		{
+		if ($row = $this->fetch($resultSet)) {
 			$this->freeResult($resultSet);
 			return true;
 		}
@@ -424,8 +394,7 @@ class TauMysqli extends TauDb
 		$sql = 'SHOW COLUMNS FROM ' . $this->dbFieldName($dbName) . '.' . $this->dbFieldName($table) . '
 			WHERE `field` = ' . $this->dbStringify($field);
 		$resultSet = $this->select($sql);
-		if ($row = $this->fetch($resultSet))
-		{
+		if ($row = $this->fetch($resultSet)) {
 			$this->freeResult($resultSet);
 			return true;
 		}
@@ -442,19 +411,18 @@ class TauMysqli extends TauDb
 	 * @param array $update Data to update if insert fails
 	 * @param mixed $where Unused in MySQL
 	 */
-	public function dbInsertUpdate( $table, $insert, $update, $where )
+	public function dbInsertUpdate($table, $insert, $update, $where)
 	{
-		$sql = $this->insertSql( $table, $insert );
+		$sql = $this->insertSql($table, $insert);
 		$sql .= ' ON DUPLICATE KEY UPDATE ';
 
 		$values = array();
-		foreach ( $update AS $fieldName => $value )
-		{
-			$values[] = $this->fieldName( $fieldName ) . ' = ' . $this->escape( $value );
+		foreach ($update as $fieldName => $value) {
+			$values[] = $this->fieldName($fieldName) . ' = ' . $this->escape($value);
 		}
 		$sql .= implode(', ', $values);
 
-		$this->query( $sql );
+		$this->query($sql);
 	}
 
 
@@ -467,18 +435,17 @@ class TauMysqli extends TauDb
 	 * @param array $insert Data to insert
 	 * @param array $update Data to update if insert fails
 	 */
-	public function dbUpsert( $table, $insert, $update )
+	public function dbUpsert($table, $insert, $update)
 	{
-		$sql = $this->insertSql( $table, $insert );
+		$sql = $this->insertSql($table, $insert);
 		$sql .= ' ON DUPLICATE KEY UPDATE ';
 
 		$values = array();
-		foreach ( $update as $fieldName => $value )
-		{
-			$values[] = $this->fieldName( $fieldName ) . ' = ' . $this->escape( $value );
+		foreach ($update as $fieldName => $value) {
+			$values[] = $this->fieldName($fieldName) . ' = ' . $this->escape($value);
 		}
 		$sql .= implode(', ', $values);
 
-		$this->query( $sql );
+		$this->query($sql);
 	}
 }
