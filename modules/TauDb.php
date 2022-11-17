@@ -1269,7 +1269,7 @@ class TauDb
 	 *
 	 * @param string $sql
 	 * @param int $expires Time, in seconds, to keep data in cache
-	 * @return array|false
+	 * @return stdClass|false
 	 */
 	public function fetchOneObject($sql = null, $expires = 0)
 	{
@@ -1386,7 +1386,7 @@ class TauDb
 	 * Retrieve all rows from an SQL query indexed by ID
 	 *
 	 * @param string $sql
-	 * @param $id Name of field to use as ID. If left blank, the first field is used.
+	 * @param string $id Name of field to use as ID. If left blank, the first field is used.
 	 * @param int $expires Time, in seconds, to keep data in cache
 	 * @return array
 	 */

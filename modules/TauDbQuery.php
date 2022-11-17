@@ -115,6 +115,12 @@ class TauDbQuery
      */
     public $offset;
 
+    /**
+     * ID column
+     *
+     * @var string
+     */
+    public $id;
 
     /**
      * The TauDb instance for the builder
@@ -461,6 +467,16 @@ class TauDbQuery
     }
 
     /**
+     * Sets the name of the ID column.
+     *
+     * @param  string|true Name of ID column. Can use `true` to assume first column in fetch() and findAll() calls.
+     */
+    public function id($id) {
+        $this->id = $id;
+        return $this;
+    }
+
+    /**
      * Fetch a single value from the database. Basically returns the first
      * field of the first row returned from a query.
      *
@@ -496,7 +512,7 @@ class TauDbQuery
      *
      * 1. Pass a single value, which will search the table based on the "id" column
      * 2. Pass in two values, the first of which is the name of the column to search and the second is the value
-     * 3. Parameters matching ->where(), such as ->findAll("user_id", "=", 100)
+     * 3. Parameters matching ->where(), such as ->find("user_id", "=", 100)
      *
      * @param  mixed $id Column name, ID value, or where expression
      * @param  mixed If provided, the value to search
@@ -510,7 +526,8 @@ class TauDbQuery
             if (is_array($args[0])) {
                 return $this->where(...$args[0])->first();
             } else {
-                return $this->where("id", "=", $args[0])->first();
+                $id = $this->id ? $this->id : "id";
+                return $this->where($id, "=", $args[0])->first();
             }
         } else if (func_num_args() >= 2) {
             return $this->where(...$args)->first();
@@ -539,7 +556,8 @@ class TauDbQuery
             if (is_array($args[0])) {
                 return $this->where(...$args[0])->fetch();
             } else {
-                return $this->where("id", "=", $args[0])->fetch();
+                $id = $this->id ? $this->id : "id";
+                return $this->where($this->id, "=", $args[0])->fetch();
             }
         } else if (func_num_args() >= 2) {
             return $this->where(...$args)->fetch();
@@ -599,12 +617,12 @@ class TauDbQuery
     {
         $sql = $this->buildSelectQuery();
 
-        if ($id) {
-            if (is_string($id)) {
-                $rows = $this->db->fetchAllWithId($sql, $id, $this->ttl);
-            } else {
-                $rows = $this->db->fetchAllWithId($sql, '', $this->ttl);
-            }
+        if ($this->id) {
+            $id = is_string($this->id) ? $this->id : "";
+            $rows = $this->db->fetchAllWithId($sql, $id, $this->ttl);
+        } else if ($id) {
+            $id = is_string($id) ? $id : "";
+            $rows = $this->db->fetchAllWithId($sql, $id, $this->ttl);
         } else {
             $rows = $this->db->fetchAll($sql, $this->ttl);
         }
