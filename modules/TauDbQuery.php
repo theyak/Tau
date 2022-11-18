@@ -1,5 +1,8 @@
 <?php
 
+use TauDatabase\TauDbTable;
+use TauDatabase\TauDbJoin;
+
 /**
  * This is an extremely simple SQL query builder. It can't do anything even
  * moderately complex. This doesn't even support JOINs, mostly because I wrote
@@ -76,7 +79,7 @@ class TauDbQuery
     /**
      * The table
      *
-     * @var string
+     * @var TauDbTable
      */
     public $table;
 
@@ -86,6 +89,13 @@ class TauDbQuery
      * @var array
      */
     public $fields = [];
+
+    /**
+     * Joins for query
+     *
+     * @var TauDbJoin[]
+     */
+    public $joins = [];
 
     /**
      * The filtering in the query
@@ -256,52 +266,65 @@ class TauDbQuery
     /**
      * Set table name to select from
      *
-     * @param  string
+     *     ->table("users");
+     *     ->table("users", "u");
+     *
+     * @param  string $table Table name
+     * @param  string $alias optional alias for table
      * @return $this
      */
-    public function table($table)
+    public function table($table, $alias = null)
     {
-        $this->table = $table;
+        $this->table = new TauDbTable($table, $alias);
+
         return $this;
     }
 
     /**
      * Insert data in database
      *
+     *     ->insert(["username" => "bob", "email" => "bob@bob.com"])
+     *
      * @param  array $data
      */
     public function insert($data)
     {
-        $this->db->insert($this->table, $data);
+        $this->db->insert($this->table->name, $data);
     }
 
     /**
      * Update data in database
      *
+     *     where("username", "bob")->update(["email" => "bob@bob.com"])
+     *
      * @param  array $data
      */
     public function update($data)
     {
-        $this->db->update($this->table, $data, $this->buildWhere($this->wheres));
+        $this->db->update($this->table->name, $data, $this->buildWhere($this->wheres));
     }
 
     /**
      * Perform an upsert operation to database
+     *
+     *     ->upsert(['username' => 'bob', 'email' => 'bob@bob.com'], ['email' => 'bob@bob.com])
      *
      * @param  array $insert
      * @param  array $update
      */
     public function upsert($insert, $update = null)
     {
-        $this->db->upsert($this->table, $insert, $update);
+        $this->db->upsert($this->table->name, $insert, $update);
     }
 
     /**
      * Delete one or more rows from table
+     *
+     *     ->delete()
      */
     public function delete()
     {
-        $sql = "DELETE FROM " . $this->db->tableName($this->table);
+        $sql = "DELETE FROM " . $this->db->tableName($this->table->name);
         if ($this->wheres) {
             $sql .= ' ' . $this->buildWhere($this->wheres);
         }
@@ -310,24 +333,30 @@ class TauDbQuery
 
     /**
      * Drop table
+     *
+     *     ->drop
      */
     public function drop()
     {
-        $sql = 'DROP TABLE ' . $this->db->tableName($this->table);
+        $sql = 'DROP TABLE ' . $this->db->tableName($this->table->name);
         $this->db->query($sql);
     }
 
     /**
      * Truncate table
+     *
+     *     ->truncate()
      */
     public function truncate()
     {
-        $sql = 'TRUNCATE TABLE ' . $this->db->tableName($this->table);
+        $sql = 'TRUNCATE TABLE ' . $this->db->tableName($this->table->name);
         $this->db->query($sql);
     }
 
     /**
      * Set field or fields to retrieve from table
+     *
+     *     ->select("user_id", "username", "email")
      *
      * @param  array|string|TauSqlExpression $fields
      * @return $this
@@ -345,7 +374,117 @@ class TauDbQuery
     }
 
     /**
-     * Add a basic where clause to the query.
+     * Add a join statement to the query
+     *
+     *     ->join('posts', 'users.id', '=', 'posts.user_id')
+     *
+     * @param  TauDbTable|string  $table The table to join - As a string, it can contain an "as" alias
+     * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
+     * @param  string $operator The operator to compare fields against
+     * @param  string $destField Field to comapare with
+     * @param  string $type The type of join. One of left, right, inner, outer. Defaults to LEFT
+     * @return $this
+     */
+    public function join($table, $srcField, $operator = null, $destField = null, $type = "LEFT")
+    {
+        $join = new TauDbJoin();
+        $join->type = strtoupper($type);
+        $join->table = new TauDbTable($table);
+
+        if ($srcField instanceof Closure) {
+            // The $operator parameter may actually hold the $type
+            $op = strtoupper($operator);
+            if (in_array($op, ["LEFT", "RIGHT", "INNER", "OUTER"])) {
+                $join->type = $op;
+            }
+            call_user_func_array($srcField, [&$join]);
+        } else {
+            $join->ons[] = [$srcField, $operator, $destField, false];
+        }
+        $this->joins[] = $join;
+
+        return $this;
+    }
+
+    /**
+     * Add a left join statement to the query
+     *
+     *     ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
+     *
+     * @param  TauDbTable|string  $table The table to join - As a string, it can contain an "as" alias
+     * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
+     * @param  string $operator The operator to compare fields against
+     * @param  string $destField Field to comapare with
+     * @return $this
+     */
+    public function leftJoin($table, $srcField, $operator, $destField)
+    {
+        return $this->join($table, $srcField, $operator, $destField, "LEFT");
+    }
+
+    /**
+     * Add a right join statement to the query
+     *
+     *     ->rightJoin('posts', 'users.id', '=', 'posts.user_id')
+     *
+     * @param  TauDbTable|string  $table The table to join - As a string, it can contain an "as" alias
+     * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
+     * @param  string $operator The operator to compare fields against
+     * @param  string $destField Field to comapare with
+     * @return $this
+     */
+    public function rightJoin($table, $srcField, $operator, $destField)
+    {
+        return $this->join($table, $srcField, $operator, $destField, "RIGHT");
+    }
+
+    /**
+     * Add an inner join statement to the query
+     *
+     *     ->innerJoin('posts', 'users.id', '=', 'posts.user_id')
+     *
+     * @param  TauDbTable|string  $table The table to join - As a string, it can contain an "as" alias
+     * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
+     * @param  string $operator The operator to compare fields against
+     * @param  string $destField Field to comapare with
+     * @return $this
+     */
+    public function innerJoin($table, $srcField, $operator, $destField)
+    {
+        return $this->join($table, $srcField, $operator, $destField, "INNER");
+    }
+
+    /**
+     * Add an outer join statement to the query
+     *
+     *     ->outerJoin('posts', 'users.id', '=', 'posts.user_id')
+     *
+     * @param  TauDbTable|string  $table The table to join - As a string, it can contain an "as" alias
+     * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
+     * @param  string $operator The operator to compare fields against
+     * @param  string $destField Field to comapare with
+     * @return $this
+     */
+    public function outerJoin($table, $srcField, $operator, $destField)
+    {
+        return $this->join($table, $srcField, $operator, $destField, "OUTER");
+    }
+
+    /**
+     * Add a basic where clause to the query. This can take parameters in
+     * a variety of formats, such as:
+     *
+     *     ->where(["username" => "bob", "email" => "bob@bob.com"])
+     *     ->where("username", "bob")->where("email", "bob@bob.com")
+     *     ->where("username", ["John", "Paul", "George", "Ringo"])
+     *     ->where("user_id", "<", 10)
+     *     ->where("username", "like", "bob%")
+     *     ->where("deleted_at", null)
+     *     ->where("creatad_at", ">", new DateTime("-1 week"))
+     *     ->where(function($qb) {
+     *         $qb->where("username", "bob");
+     *         $qb->orWhere("email", "bob@bob.com");
+     *     })
      *
      * @param  string|array|Closure $field
      * @param  mixed $operation
@@ -400,7 +539,16 @@ class TauDbQuery
         return $this;
     }
 
-    // Does $operation mean opeartion between elements or something like OR (col1 = 1 AND col2 = 2)
+    /**
+     * Add a basic where clause to the query based on a key/value array.
+     *
+     *     ->whereArray(["username" => "bob", "email" => "bob@bob.com"])
+     *     ->whereArray(["username" => "bob", "email" => "bob@bob.com"], "or")
+     *
+     * @param  array $keyval
+     * @param  string $type One of "and" or "or"
+     * @return $this
+     */
     public function whereArray($keyval, $type = "and")
     {
         $b = new self();
@@ -417,7 +565,23 @@ class TauDbQuery
     }
 
     /**
-     * @param string|Closure $callable
+     * Adds a WHERE condition that should be OR'd with the previous condition
+     *
+     * username = "bob" OR email = "bob@bob.com"
+     *
+     *     ->where("username", "bob")->orWhere("email", "bob@bob.com")
+     *
+     * user_id = 10 OR (user_id = 12 AND subject like "%help%"):
+     *
+     *     ->where("user_id", 10")->orWhere(function($qb) {
+     *         $qb->where("user_id", 12);
+     *         $qb->where("subject", "like", "%help%");
+     *     })
+     *
+     * @param  string|array|Closure $field
+     * @param  mixed $operation
+     * @param  mixed $value
+     * @return $this
      */
     public function orWhere($callable, $operation = null, $value = null)
     {
@@ -432,6 +596,13 @@ class TauDbQuery
     /**
      * Set ORDER BY condition
      *
+     *    ->order("username")
+     *
+     * Order descending:
+     *
+     *    ->order("username", true)
+     *    ->order("username", "desc")
+     *
      * @param  string|TauSqlExpression $field
      * @param  bool|"desc" $desc
      * @return $this
@@ -445,6 +616,8 @@ class TauDbQuery
     /**
      * Set the maximum number of rows to return
      *
+     *     ->limit(10)
+     *
      * @param  int $limit
      * @return $this
      */
@@ -457,6 +630,8 @@ class TauDbQuery
     /**
      * Set number of rows to skip before selecting rows
      *
+     *     ->offset(20)
+     *
      * @param  int $offset
      * @return $this
      */
@@ -467,11 +642,22 @@ class TauDbQuery
     }
 
     /**
-     * Sets the name of the ID column.
+     * Sets the name of the ID column. This column will be used to search
+     * with the `find()` method and set the array indexes for `pluck()`,
+     * `fetch()` and `findAll()`.
+     *
+     * Use first column (pluck, fetch, and findAll ony):
+     *
+     *     ->id()
+     *
+     * Use specified column:
+     *
+     *     ->id("username")
      *
      * @param  string|true Name of ID column. Can use `true` to assume first column in fetch() and findAll() calls.
      */
-    public function id($id) {
+    public function id($id = true)
+    {
         $this->id = $id;
         return $this;
     }
@@ -479,6 +665,8 @@ class TauDbQuery
     /**
      * Fetch a single value from the database. Basically returns the first
      * field of the first row returned from a query.
+     *
+     *    ->value()
      *
      * @return string
      */
@@ -491,6 +679,18 @@ class TauDbQuery
     /**
      * Pluck the values of a column, or key/value pairs
      *
+     * Fetch a single column:
+     *
+     *     ->pluck("username")
+     *
+     * Fetch key value pairs by specifying ID
+     *
+     *     ->id("username")->pluck("email")
+     *
+     * Fetch key value pairs via $key parameter
+     *
+     *     ->pluck("email", "username")
+     *
      * @param  string $column
      * @param  string $key If provided, uses column as a key to result set
      * @return array
@@ -499,6 +699,10 @@ class TauDbQuery
     {
         if ($key) {
             $this->fields = [$key, $column];
+            return $this->pairs();
+        } else if ($this->id) {
+            $id = is_string($this->id) ? $this->id : "id";
+            $this->fields = [$id, $column];
             return $this->pairs();
         } else {
             $this->fields = [$column];
@@ -511,8 +715,17 @@ class TauDbQuery
      * There are several ways to use this function.
      *
      * 1. Pass a single value, which will search the table based on the "id" column
+     *
+     *     ->table("users")->find(3)
+     *     ->table("users")->id("user_id")->find(3)
+     *
      * 2. Pass in two values, the first of which is the name of the column to search and the second is the value
-     * 3. Parameters matching ->where(), such as ->find("user_id", "=", 100)
+     *
+     *     ->table("user_id", 3)
+     *
+     * 3. Parameters matching a call to ->where()
+     *
+     *     ->table("user_id", "=", 100)
      *
      * @param  mixed $id Column name, ID value, or where expression
      * @param  mixed If provided, the value to search
@@ -526,7 +739,7 @@ class TauDbQuery
             if (is_array($args[0])) {
                 return $this->where(...$args[0])->first();
             } else {
-                $id = $this->id ? $this->id : "id";
+                $id = is_string($this->id) ? $this->id : "id";
                 return $this->where($id, "=", $args[0])->first();
             }
         } else if (func_num_args() >= 2) {
@@ -538,11 +751,23 @@ class TauDbQuery
 
     /**
      * Find a rows based on an ID or single equality condition.
-     * There are several ways to use this function.
+     * There are a couple ways to use this function.
      *
-     * 1. Pass a single value, which will search the table based on the "id" column
-     * 2. Pass in two values, the first of which is the name of the column to search and the second is the value
-     * 3. Parameters matching ->where(), such as ->findAll("user_id", "<", 100)
+     * 1. Pass in two values, the first of which is the name of the column to search and the second is the value
+     *
+     *    ->findAll("user_type", "admin")
+     *
+     * 2. Parameters matching ->where()
+     *
+     *    ->findAll("user_type", "in", ["staff", "admin"])
+     *
+     * You can specify the column to use for the index of each row in the array with ->id()
+     *
+     *    ->id("username")->findAll("user_type", "in", ["staff", "admin"])
+     *
+     * Or just use the first column of the result
+     *
+     *    ->id()->findAll("user_type", "in", ["staff", "admin"])
      *
      * @param  mixed $id Column name, ID value, or where expression
      * @param  mixed If provided, the value to search
@@ -556,8 +781,8 @@ class TauDbQuery
             if (is_array($args[0])) {
                 return $this->where(...$args[0])->fetch();
             } else {
-                $id = $this->id ? $this->id : "id";
-                return $this->where($this->id, "=", $args[0])->fetch();
+                $id = is_string($this->id) ? $this->id : "id";
+                return $this->where($id, "=", $args[0])->fetch();
             }
         } else if (func_num_args() >= 2) {
             return $this->where(...$args)->fetch();
@@ -568,6 +793,8 @@ class TauDbQuery
 
     /**
      * Fetch a column from a database SELECT query
+     *
+     *     ->select("username")->column()
      *
      * @return array
      */
@@ -581,6 +808,8 @@ class TauDbQuery
      * Fetch key value pairs from the database. First value in result set is
      * used as array key and second value in result set is set as value.
      *
+     *     ->select("username", "email")->pairs()
+     *
      * @return array
      */
     public function pairs()
@@ -591,6 +820,8 @@ class TauDbQuery
 
     /**
      * Fetch first row from query
+     *
+     *     ->where("user_id", 10)->first()
      *
      * @return stdClass|bool
      */
@@ -608,6 +839,18 @@ class TauDbQuery
 
     /**
      * Fetch all rows from query
+     *
+     *     ->where("created_at", ">", new DateTime("-1 month"))->fetch()
+     *
+     * The return result can be indexed by the first column in each row
+     *
+     *     ->where("created_at", ">", new DateTime("-1 month"))->fetch(true)
+     *     ->id(true)->where("created_at", ">", new DateTime("-1 month"))->fetch()
+     *
+     * Thre return result can be indexed by a specified column
+     *
+     *     ->where("created_at", ">", new DateTime("-1 month"))->fetch("email")
+     *     ->id("email")->where("created_at", ">", new DateTime("-1 month"))->fetch()
      *
      * @param  bool|string $id Indicates that result should be indexed by ID instead of 0...n.
      *   Specify a string to indicate column name to index by. Specify true to index by first column.
@@ -639,7 +882,35 @@ class TauDbQuery
 
     /**
      * Cast an object of one type (usually stdclass) to another via shallow copy.
+     *
+     *     ->cast(User::class)
+     *
      * A best guess of property type is made based on doc blocks or defined type.
+     *
+     * class User {
+     *     public int $user_id;
+     *     public string $username;
+     * }
+     *
+     * class User {
+     *     /**
+     *      * @var int
+     *      *\ <-- Eeps, * / closes this docblock, so can't show correctly
+     *     public $user_id;
+     *
+     *     /**
+     *      * @var string
+     *      *\ <-- Eeps, * / closes this docblock, so can't show correctly
+     *     public $username;
+     * }
+     *
+     * You can also specify a table name via class attributes in PHP 8.0+
+     *
+     * #[dbtable("users")]
+     * class User {
+     *     public int $user_id;
+     *     public string $username;
+     * }
      *
      * @param  string Class name for destination class
      * @param  object Source class to cast from
@@ -725,12 +996,21 @@ class TauDbQuery
      * via the table() method but may also be specified by a
      * #[dbtable('table_name')] attribute in a casted class.
      *
+     * @param  string|TauDbTable|null $table
      * @return string|bool
      */
-    public function getTable()
+    public function getTable($table = null)
     {
-        if ($this->table) {
-            return $this->db->tableName($this->table);
+        if ($table && !($table instanceof TauDbTable)) {
+            $table = new TauDbTable($table);
+        }
+
+        if ($table instanceof TauDbTable) {
+            $t = $this->db->fieldName($table->name);
+            if ($table->alias) {
+                $t .= " as " . $this->db->fieldName($table->alias);
+            }
+            return $t;
         }
 
         if (!$this->cast) {
@@ -751,13 +1031,36 @@ class TauDbQuery
     }
 
     /**
+     * Construct JOIN clauses
+     *
+     * @param  TauDbJoin[] $joins
+     * @return string
+     */
+    public function buildJoins($joins)
+    {
+        $sql = "";
+        foreach ($joins as $join) {
+            $sql .= " " . $join->type . ' JOIN ';
+            $sql .= $this->getTable($join->table);
+            foreach ($join->ons as $idx => $on) {
+                $prefix = " ON ";
+                if ($idx > 0) {
+                    $prefix = $on[3] ? " OR " : " AND ";
+                }
+                $sql .= $prefix . $this->db->fieldName($on[0]) . ' ' . $on[1] . ' ' . $this->db->fieldName($on[2]);
+            }
+        }
+        return " " . trim($sql);
+    }
+
+    /**
      * Build the SQL query
      *
      * @return string
      */
-    public function buildSelectQuery()
+    public function buildSelectQuery($pretty = true)
     {
-        $table = $this->getTable();
+        $table = $this->getTable($this->table);
         if (!$table) {
             throw new RuntimeException("Missing table");
         }
@@ -770,6 +1073,10 @@ class TauDbQuery
         }
 
         $sql = "SELECT {$fields} FROM {$table}";
+
+        if ($this->joins) {
+            $sql .= $this->buildJoins($this->joins);
+        }
 
         if ($this->wheres) {
             $sql .= $this->buildWhere($this->wheres);
@@ -796,6 +1103,9 @@ class TauDbQuery
         return $sql;
     }
 
+    /**
+     * Return the query that would be run as a string
+     */
     public function __toString()
     {
         try {

@@ -113,6 +113,7 @@ class Tau
 		}
 
 		// Check if module exists. If it does not, throw exception as necessary
+		$module = str_replace("\\", Tau::DS, $module);
 		if (!file_exists($path . $module . '.php'))
 		{
 			// TODO: Check a repository for class and download, save, and
@@ -141,8 +142,8 @@ class Tau
 		return php_sapi_name() == 'cli';
 	}
 
-	
-	
+
+
 	public static function isAjax()
 	{
 		return
