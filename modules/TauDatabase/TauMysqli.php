@@ -333,6 +333,7 @@ class TauMysqli extends TauDb
 
 	/**
 	 * Get the ID from the last insert
+	 *
 	 * @return int
 	 */
 	public function insertId()
@@ -344,6 +345,7 @@ class TauMysqli extends TauDb
 
 	/**
 	 * Get number of rows affected by last INSERT or UPDATE
+	 *
 	 * @return int
 	 */
 	public function affectedRows()
@@ -355,6 +357,7 @@ class TauMysqli extends TauDb
 
 	/**
 	 * Get number of rows returned in last query
+	 *
 	 * @return int
 	 */
 	public function numRows()
@@ -366,6 +369,7 @@ class TauMysqli extends TauDb
 
 	/**
 	 * Determine if table exists in database
+	 *
 	 * @param string $table
 	 * @param string $dbName
 	 * @return bool
