@@ -178,7 +178,11 @@ class TauMysqli extends TauDb
 	{
 		$parts = explode('.', $fieldName);
 		foreach ($parts as $key => $value) {
-			$parts[$key] = '`' . $this->dbEscape(trim($value, '`')) . '`';
+			if ($value === "*") {
+				$parts[$key] = "*";
+			} else {
+				$parts[$key] = '`' . $this->dbEscape(trim($value, '`')) . '`';
+			}
 		}
 
 		return implode('.', $parts);

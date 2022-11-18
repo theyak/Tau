@@ -1006,9 +1006,9 @@ class TauDbQuery
         }
 
         if ($table instanceof TauDbTable) {
-            $t = $this->db->fieldName($table->name);
+            $t = $this->db->tableName($table->name);
             if ($table->alias) {
-                $t .= " as " . $this->db->fieldName($table->alias);
+                $t .= " as " . $this->db->tableName($table->alias);
             }
             return $t;
         }
