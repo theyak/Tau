@@ -460,15 +460,34 @@ class TauSQLite extends TauDb
 	 */
 	public function dbUpsert($table, $insert, $update, $conflict = [])
 	{
-		$sql = $this->insertSql($table, $insert);
-		$sql .= " ON CONFLICT(" . implode(", ", $conflict) . ") DO UPDATE SET";
+		if ($conflict) {
+			if (!is_array($conflict)) {
+				$conflict = [$conflict];
+			}
 
-		$values = [];
-		foreach ($update as $fieldName => $value) {
-			$values[] = $this->fieldName($fieldName) . ' = ' . $this->escape($value);
+			$sql = $this->insertSql($table, $insert);
+			$sql .= " ON CONFLICT(" . implode(", ", $conflict) . ") DO UPDATE SET";
+
+			$values = [];
+			foreach ($update as $fieldName => $value) {
+				$values[] = $this->fieldName($fieldName) . ' = ' . $this->escape($value);
+			}
+			$sql .= implode(', ', $values);
+
+			$this->db->exec($sql);
+		} else {
+			try {
+				$sql = $this->insertSql($table, $insert);
+				$this->db->exec($sql);
+			} catch (\Exception $ex) {
+				$message = $ex->getMessage();
+
+				// Can other languages be used? If so, what are those errors?
+				if (strpos($message, "UNIQUE constraint failed:") !== false) {
+					$conflict = [substr($message, 26)];
+					$this->dbUpsert($table, $insert, $update, $conflict);
+				}
+			}
 		}
-		$sql .= implode(', ', $values);
-
-		$this->db->exec($sql);
 	}
 }
