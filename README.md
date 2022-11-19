@@ -2,7 +2,10 @@ Tau
 ===
 
 > **Note**
-> As of November 2022, this library no longer supports PHP 5.x
+>
+> With the addition of `TauSQLite` and `TauDbQuery` in November 2022, this library
+> no longer supports below PHP 7.4. If you do not use TauSQLite or TauDbQuery it 
+> should still remain functional for PHP 5.x, and PHP 7.0 through 7.3, but we haven't tested it. 
 
 Tau is a small PHP library with common routines required in many apps. It is not a framework,
 and thus does not specify how you code. Yay!
