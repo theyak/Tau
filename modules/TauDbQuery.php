@@ -72,7 +72,7 @@ use TauDatabase\TauDbJoin;
  * db('users')->select('username')->where('user_id', 12)->first();
  */
 
-class TauDbTable
+class TauDbQuery
 {
     /**
      * The table name
@@ -115,6 +115,13 @@ class TauDbTable
      * @var string[]
      */
     public $orderBys = [];
+
+    /**
+     * Group by clause
+     *
+     * @var string[]
+     */
+    public $groupBys = [];
 
     /**
      * The limit to the number of records returned
@@ -630,6 +637,20 @@ class TauDbTable
     }
 
     /**
+     * Set GROUP BY condition
+     *
+     *    ->group("age")
+     *
+     * @param  string|TauSqlExpression $field
+     * @return $this
+     */
+    public function group($field)
+    {
+        $this->groupBys[] = $field;
+        return $this;
+    }
+
+    /**
      * Set ORDER BY condition
      *
      *    ->order("username")
@@ -1098,11 +1119,28 @@ class TauDbTable
     }
 
     /**
+     * Construct a list of columns for query
+     *
+     * @param string|string[] List of columns
+     * @return string
+     */
+    public function columns($columns) {
+        if (is_string($columns)) {
+            $columns = [$columns];
+        }
+
+        $fields = array_map(fn($f) => $this->db->fieldName($f), $columns);
+        $fields = implode(", ", $fields);
+
+        return $fields;
+    }
+
+    /**
      * Build the SQL query
      *
      * @return string
      */
-    public function buildSelectQuery($pretty = true)
+    public function buildSelectQuery()
     {
         $table = $this->getTable($this->tableName, $this->tableAlias);
         if (!$table) {
@@ -1110,8 +1148,7 @@ class TauDbTable
         }
 
         if ($this->fields) {
-            $fields = array_map(fn($f) => $this->db->fieldName($f), $this->fields);
-            $fields = implode(", ", $fields);
+            $fields = $this->columns($this->fields);
         } else {
             $fields = "*";
         }
@@ -1124,6 +1161,10 @@ class TauDbTable
 
         if ($this->wheres) {
             $sql .= $this->buildWhere($this->wheres);
+        }
+
+        if ($this->groupBys) {
+            $sql .= ' GROUP BY ' . $this->columns($this->groupBys);
         }
 
         if ($this->orderBys) {
@@ -1155,6 +1196,7 @@ class TauDbTable
         $this->wheres = [];
         $this->joins = [];
         $this->orderBys = [];
+        $this->groupBys = [];
         $this->limit = null;
         $this->offset = null;
     }

@@ -108,11 +108,17 @@ class TauSQLite extends TauDb
 	/**
 	 * Convert a PHP string into an SQL field name
 	 *
-	 * @param string $fieldName
+	 * @param string|TauSqlExpression $fieldName
 	 * @return string
 	 */
 	public function dbFieldName($fieldName)
 	{
+		// Check if field is a raw expression
+		if ($fieldName instanceof TauSqlExpression) {
+			return $fieldName->get();
+		}
+
+		// Split string at "as," if available
 		$pos = stripos($fieldName, " as ");
 		if ($pos !== false) {
 			$field = substr($fieldName, 0, $pos);
@@ -126,14 +132,6 @@ class TauSQLite extends TauDb
 		if ($alias) {
 			$alias = trim($alias, '"\r\n\t ');
 			$alias = '"' . $this->dbEscape($alias) . '"';
-		}
-
-		// Check if field is a raw expression
-		if ($field instanceof TauSqlExpression) {
-			if ($alias) {
-				return $field . ' as ' . $alias;
-			}
-			return $field->get();
 		}
 
 		// Look for SQL function. "(" isn't allowed in field names
