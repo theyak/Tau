@@ -1,6 +1,8 @@
 <?php
 /**
  * Postgres Database Module For TAU
+ * This definitely does not work completely and I probably
+ * shouldn't even include it in Tau.
  *
  * @Author          theyak
  * @Copyright       2022
@@ -389,19 +391,23 @@ class TauPostgres extends TauDb
 	 * @param string $table Name of table
 	 * @param array $insert Data to insert
 	 * @param array $update Data to update if insert fails
+     * @param array $conflict List of columns to use to determine conflict
 	 */
-	public function dbUpsert( $table, $insert, $update )
+	public function dbUpsert( $table, $insert, $update, $conflict = [] )
 	{
-		$sql = $this->insertSql( $table, $insert );
-		$sql .= ' ON DUPLICATE KEY UPDATE ';
+		if (!is_array($conflict)) {
+			$conflict = [$conflict];
+		}
 
-		$values = array();
-		foreach ( $update AS $fieldName => $value )
-		{
-			$values[] = $this->fieldName( $fieldName ) . ' = ' . $this->escape( $value );
+		$sql = $this->insertSql($table, $insert);
+		$sql .= " ON CONFLICT(" . implode(", ", $conflict) . ") DO UPDATE SET";
+
+		$values = [];
+		foreach ($update as $fieldName => $value) {
+			$values[] = $this->fieldName($fieldName) . ' = ' . $this->escape($value);
 		}
 		$sql .= implode(', ', $values);
 
-		$this->query( $sql );
+		$this->query($sql);
 	}
 }

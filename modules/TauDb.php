@@ -432,8 +432,8 @@ class TauDb
 	/**
 	 * The default error handler
 	 *
-	 * @param type $sql
-	 * @param type $error
+	 * @param string $sql
+	 * @param string $error
 	 * @throws \Exception
 	 */
 	public function defaultErrorHandler( $sql, $error )

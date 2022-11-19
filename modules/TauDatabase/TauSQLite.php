@@ -482,10 +482,19 @@ class TauSQLite extends TauDb
 			} catch (\Exception $ex) {
 				$message = $ex->getMessage();
 
+				// Super duper sketchy unique key conflict hack
+				// There's got to be a better way.
 				// Can other languages be used? If so, what are those errors?
-				if (strpos($message, "UNIQUE constraint failed:") !== false) {
-					$conflict = [substr($message, 26)];
-					$this->dbUpsert($table, $insert, $update, $conflict);
+				if (strpos($message, "UNIQUE") !== false) {
+					$pos = strpos($message, ':');
+					if ($pos > 0) {
+						$conflict = [substr($message, $pos + 2)];
+						$this->dbUpsert($table, $insert, $update, $conflict);
+					} else {
+						throw $ex;
+					}
+				} else {
+					throw $ex;
 				}
 			}
 		}
