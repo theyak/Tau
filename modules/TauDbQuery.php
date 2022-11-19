@@ -1124,7 +1124,8 @@ class TauDbQuery
      * @param string|string[] List of columns
      * @return string
      */
-    public function columns($columns) {
+    public function columns($columns)
+    {
         if (is_string($columns)) {
             $columns = [$columns];
         }
@@ -1191,7 +1192,8 @@ class TauDbQuery
     /**
      * Reset parameters after a select query
      */
-    public function reset() {
+    public function reset()
+    {
         $this->fields = [];
         $this->wheres = [];
         $this->joins = [];

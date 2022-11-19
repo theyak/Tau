@@ -248,7 +248,7 @@ class TauSQLite extends TauDb
 	{
 		$row = $this->dbFetch($rs);
 		if ($row) {
-			return (object)$row;
+			return (object) $row;
 		}
 
 		return $row;
@@ -290,7 +290,7 @@ class TauSQLite extends TauDb
 
 		$rows = [];
 		while ($row = $rs->fetchArray(SQLITE3_ASSOC)) {
-			$rows[] = (object)$row;
+			$rows[] = (object) $row;
 		}
 
 		$this->numRows = count($rows);
@@ -343,9 +343,9 @@ class TauSQLite extends TauDb
 		$rows = [];
 		while ($row = $rs->fetchArray(SQLITE3_ASSOC)) {
 			if ($id && isset($row[$id])) {
-				$rows[$row[$id]] = (object)$row;
+				$rows[$row[$id]] = (object) $row;
 			} else {
-				$rows[reset($row)] = (object)$row;
+				$rows[reset($row)] = (object) $row;
 			}
 		}
 
@@ -398,7 +398,7 @@ class TauSQLite extends TauDb
 			WHERE "type"=\'table\'
 				AND name=\'{$table}\'
 			COLLATE NOCASE';
-		return (bool)$this->db->querySingle($query);
+		return (bool) $this->db->querySingle($query);
 	}
 
 	/**
@@ -454,7 +454,7 @@ class TauSQLite extends TauDb
 	 * @param string $table Name of table
 	 * @param array $insert Data to insert
 	 * @param array $update Data to update if insert fails
-     * @param array $conflict List of columns to use to determine conflict. Ignored by MySQL
+	 * @param array $conflict List of columns to use to determine conflict. Ignored by MySQL
 	 */
 	public function dbUpsert($table, $insert, $update, $conflict = [])
 	{
