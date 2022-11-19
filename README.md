@@ -1,6 +1,9 @@
 Tau
 ===
 
+> **Note**
+> As of November 2022, this library no longer supports PHP 5.x
+
 Tau is a small PHP library with common routines required in many apps. It is not a framework,
 and thus does not specify how you code. Yay!
 

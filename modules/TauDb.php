@@ -305,9 +305,9 @@ class TauDb
 	 */
 	public static function init( $engine, TauDbServer|string $server )
 	{
-		if ($engine === "sqlite") {
-			include dirname(__FILE__) . Tau::DS . 'TauDatabase' . Tau::DS . "TauSQLite.php";
-			$db = new TauSQLite($server);
+		if ( $engine === "sqlite" ) {
+			include TauFS::path( dirname(__FILE__), 'TauDatabase', 'TauSQLite.php' );
+			$db = new TauSQLite( $server );
 			return $db;
 		}
 

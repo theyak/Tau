@@ -235,23 +235,13 @@ class TauDbTable
      *
      *     ->cast(User::class)
      *
-     * A best guess of property type is made based on doc blocks or defined type.
+     * A best guess of property type is made based on doc blocks or defined type
+     * or docblock. Docblock example can't be added as it terminates this
+     * comment block, but it's your standard * @var int block.
      *
      * class User {
      *     public int $user_id;
      *     public string $username;
-     * }
-     *
-     * class User {
-     *     /**
-     *      * @var int
-     *      *\
-     *     public $user_id;
-     *
-     *     /**
-     *      * @var string
-     *      *\
-     *     public $username;
      * }
      *
      * You can also specify a table name via class attributes in PHP 8.0+
@@ -340,7 +330,7 @@ class TauDbTable
     /**
      * Update data in database
      *
-     *     where("username", "bob")->update(["email" => "bob@bob.com"])
+     *     ->where("username", "bob")->update(["email" => "bob@bob.com"])
      *
      * @param  array $data
      */
@@ -358,7 +348,7 @@ class TauDbTable
      * @param  array $update
      * @param  array $conflict List of columns to use to determine conflict. Ignored by MySQL.
      */
-    public function upsert($insert, $update = null, $conflict = null)
+    public function upsert($insert, $update = null, $conflict = [])
     {
         $this->db->upsert($this->tableName, $insert, $update, $conflict);
     }

@@ -19,6 +19,10 @@ class TauFS
 {
 	public static $exclude = array('.', '..');
 
+	public static function path(...$args) {
+		return implode(DIRECTORY_SEPARATOR, $args);
+	}
+
 
 	/**
 	 * Retrive listing of files in directory
