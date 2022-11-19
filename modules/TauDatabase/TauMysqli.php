@@ -442,8 +442,9 @@ class TauMysqli extends TauDb
 	 * @param string $table Name of table
 	 * @param array $insert Data to insert
 	 * @param array $update Data to update if insert fails
+     * @param array $conflict List of columns to use to determine conflict. Ignored by MySQL.
 	 */
-	public function dbUpsert($table, $insert, $update)
+	public function dbUpsert($table, $insert, $update, $conflict = null)
 	{
 		$sql = $this->insertSql($table, $insert);
 		$sql .= ' ON DUPLICATE KEY UPDATE ';

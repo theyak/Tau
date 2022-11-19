@@ -300,11 +300,17 @@ class TauDb
 	 * Initializes a database connection
 	 *
 	 * @param string $engine
-	 * @param TauDbServer $server
+	 * @param TauDbServer|string $server
 	 * @return TauDb $engine
 	 */
-	public static function init( $engine, TauDbServer $server )
+	public static function init( $engine, TauDbServer|string $server )
 	{
+		if ($engine === "sqlite") {
+			include dirname(__FILE__) . Tau::DS . 'TauDatabase' . Tau::DS . "TauSQLite.php";
+			$db = new TauSQLite($server);
+			return $db;
+		}
+
 		$engine = 'Tau' . ucfirst( $engine );
 
 		// Load class as needed
@@ -1161,7 +1167,6 @@ class TauDb
 
 		$this->queries[] = $query;
 
-
 		if ($resultSet === false)
 		{
 			call_user_func( $this->error_handler, $sql, $this->dbError() );
@@ -1583,8 +1588,9 @@ class TauDb
 	 * @param string $table
 	 * @param array $insert
 	 * @param array $update
+     * @param array $conflict List of columns to use to determine conflict. Ignored by MySQL.
 	 */
-	public function upsert( $table, $insert, $update = null )
+	public function upsert( $table, $insert, $update = null, $conflict = null )
 	{
 		if ( (! is_array($insert) || sizeof( $insert ) === 0 )  && is_array( $update ) )
 		{
@@ -1596,7 +1602,7 @@ class TauDb
 			$update = $insert;
 		}
 
-		$this->dbUpsert( $table, $insert, $update );
+		$this->dbUpsert( $table, $insert, $update, $conflict );
 	}
 
 
@@ -1653,7 +1659,7 @@ class TauDb
 	 */
 	public function isField($field, $table, $dbName = null)
 	{
-		if (is_null($dbName))
+		if (is_null($dbName) && $this->server)
 		{
 			$dbName = $this->server->database;
 		}

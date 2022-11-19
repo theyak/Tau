@@ -1,15 +1,13 @@
 <?php
 
-use TauDatabase\TauDbTable;
 use TauDatabase\TauDbJoin;
 
 /**
  * This is an extremely simple SQL query builder. It can't do anything even
- * moderately complex. This doesn't even support JOINs, mostly because I wrote
- * this in a couple hours one evening in which I was bored. What's even crazier
- * is most of this functionality is already built into TauDb, but it's a bit
- * clunky. That being said, there are much better query builders out in the wild,
- * use those instead.
+ * moderately complex, mostly because I wrote this in a couple hours one evening
+ * in which I was bored. What's even crazier is most of this functionality is
+ * already built into TauDb, but it's a bit clunky. That being said, there are
+ * much better query builders out in the wild, use those instead.
  *
  * // Get user with user_id 12
  * $sq = new TauDbQuery($db);
@@ -74,14 +72,21 @@ use TauDatabase\TauDbJoin;
  * db('users')->select('username')->where('user_id', 12)->first();
  */
 
-class TauDbQuery
+class TauDbTable
 {
     /**
-     * The table
+     * The table name
      *
-     * @var TauDbTable
+     * @var string
      */
-    public $table;
+    public $tableName;
+
+    /**
+     * Table alias
+     *
+     * @var string
+     */
+    public $tableAlias;
 
     /**
      * The columns which are returned in a select query
@@ -226,9 +231,40 @@ class TauDbQuery
     }
 
     /**
-     * Type to cast result to
+     * Cast an object of one type (usually stdclass) to another via shallow copy.
+     *
+     *     ->cast(User::class)
+     *
+     * A best guess of property type is made based on doc blocks or defined type.
+     *
+     * class User {
+     *     public int $user_id;
+     *     public string $username;
+     * }
+     *
+     * class User {
+     *     /**
+     *      * @var int
+     *      *\
+     *     public $user_id;
+     *
+     *     /**
+     *      * @var string
+     *      *\
+     *     public $username;
+     * }
+     *
+     * You can also specify a table name via class attributes in PHP 8.0+
+     *
+     * #[dbtable("users")]
+     * class User {
+     *     public int $user_id;
+     *     public string $username;
+     * }
      *
      * @param  string $class Name of class
+     * @param  bool $allPropertiees Whether to cast all properties from source or just those
+     *              that are defined in the class.
      * @return $this
      */
     function cast($class, $allProperties = false)
@@ -275,7 +311,16 @@ class TauDbQuery
      */
     public function table($table, $alias = null)
     {
-        $this->table = new TauDbTable($table, $alias);
+        if (is_null($alias)) {
+            $pos = stripos($table, ' as ');
+            if ($pos !== false) {
+                $alias = substr($table, $pos + 4);
+                $table = substr($table, 0, $pos);
+            }
+        }
+
+        $this->tableName = trim($table);
+        $this->tableAlias = is_string($alias) ? trim($alias) : null;
 
         return $this;
     }
@@ -289,7 +334,7 @@ class TauDbQuery
      */
     public function insert($data)
     {
-        $this->db->insert($this->table->name, $data);
+        $this->db->insert($this->tableName, $data);
     }
 
     /**
@@ -301,7 +346,7 @@ class TauDbQuery
      */
     public function update($data)
     {
-        $this->db->update($this->table->name, $data, $this->buildWhere($this->wheres));
+        $this->db->update($this->tableName, $data, $this->buildWhere($this->wheres));
     }
 
     /**
@@ -311,10 +356,11 @@ class TauDbQuery
      *
      * @param  array $insert
      * @param  array $update
+     * @param  array $conflict List of columns to use to determine conflict. Ignored by MySQL.
      */
-    public function upsert($insert, $update = null)
+    public function upsert($insert, $update = null, $conflict = null)
     {
-        $this->db->upsert($this->table->name, $insert, $update);
+        $this->db->upsert($this->tableName, $insert, $update, $conflict);
     }
 
     /**
@@ -324,7 +370,7 @@ class TauDbQuery
      */
     public function delete()
     {
-        $sql = "DELETE FROM " . $this->db->tableName($this->table->name);
+        $sql = "DELETE FROM " . $this->db->tableName($this->tableName);
         if ($this->wheres) {
             $sql .= ' ' . $this->buildWhere($this->wheres);
         }
@@ -338,7 +384,7 @@ class TauDbQuery
      */
     public function drop()
     {
-        $sql = 'DROP TABLE ' . $this->db->tableName($this->table->name);
+        $sql = 'DROP TABLE ' . $this->db->tableName($this->tableName);
         $this->db->query($sql);
     }
 
@@ -349,7 +395,7 @@ class TauDbQuery
      */
     public function truncate()
     {
-        $sql = 'TRUNCATE TABLE ' . $this->db->tableName($this->table->name);
+        $sql = 'TRUNCATE TABLE ' . $this->db->tableName($this->tableName);
         $this->db->query($sql);
     }
 
@@ -378,7 +424,7 @@ class TauDbQuery
      *
      *     ->join('posts', 'users.id', '=', 'posts.user_id')
      *
-     * @param  TauDbTable|string  $table The table to join - As a string, it can contain an "as" alias
+     * @param  string $table The table to join - As a string, it can contain an "as" alias
      * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
      * @param  string $operator The operator to compare fields against
      * @param  string $destField Field to comapare with
@@ -389,7 +435,7 @@ class TauDbQuery
     {
         $join = new TauDbJoin();
         $join->type = strtoupper($type);
-        $join->table = new TauDbTable($table);
+        $join->table = $table;
 
         if ($srcField instanceof Closure) {
             // The $operator parameter may actually hold the $type
@@ -411,7 +457,7 @@ class TauDbQuery
      *
      *     ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
      *
-     * @param  TauDbTable|string  $table The table to join - As a string, it can contain an "as" alias
+     * @param  string $table The table to join - As a string, it can contain an "as" alias
      * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
      * @param  string $operator The operator to compare fields against
      * @param  string $destField Field to comapare with
@@ -427,7 +473,7 @@ class TauDbQuery
      *
      *     ->rightJoin('posts', 'users.id', '=', 'posts.user_id')
      *
-     * @param  TauDbTable|string  $table The table to join - As a string, it can contain an "as" alias
+     * @param  string $table The table to join - As a string, it can contain an "as" alias
      * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
      * @param  string $operator The operator to compare fields against
      * @param  string $destField Field to comapare with
@@ -443,7 +489,7 @@ class TauDbQuery
      *
      *     ->innerJoin('posts', 'users.id', '=', 'posts.user_id')
      *
-     * @param  TauDbTable|string  $table The table to join - As a string, it can contain an "as" alias
+     * @param  string $table The table to join - As a string, it can contain an "as" alias
      * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
      * @param  string $operator The operator to compare fields against
      * @param  string $destField Field to comapare with
@@ -459,7 +505,7 @@ class TauDbQuery
      *
      *     ->outerJoin('posts', 'users.id', '=', 'posts.user_id')
      *
-     * @param  TauDbTable|string  $table The table to join - As a string, it can contain an "as" alias
+     * @param  string $table The table to join - As a string, it can contain an "as" alias
      * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
      * @param  string $operator The operator to compare fields against
      * @param  string $destField Field to comapare with
@@ -801,6 +847,7 @@ class TauDbQuery
     public function column()
     {
         $sql = $this->buildSelectQuery();
+        $this->reset();
         return $this->db->fetchColumn($sql, $this->ttl);
     }
 
@@ -815,6 +862,7 @@ class TauDbQuery
     public function pairs()
     {
         $sql = $this->buildSelectQuery();
+        $this->reset();
         return $this->db->fetchPairs($sql, $this->ttl);
     }
 
@@ -828,6 +876,7 @@ class TauDbQuery
     public function first()
     {
         $sql = $this->buildSelectQuery();
+        $this->reset();
         $row = $this->db->fetchOneObject($sql, $this->ttl);
 
         if ($this->cast) {
@@ -859,6 +908,7 @@ class TauDbQuery
     public function fetch($id = false)
     {
         $sql = $this->buildSelectQuery();
+        $this->reset();
 
         if ($this->id) {
             $id = is_string($this->id) ? $this->id : "";
@@ -996,19 +1046,23 @@ class TauDbQuery
      * via the table() method but may also be specified by a
      * #[dbtable('table_name')] attribute in a casted class.
      *
-     * @param  string|TauDbTable|null $table
+     * @param  string|null $table
      * @return string|bool
      */
-    public function getTable($table = null)
+    public function getTable($name = null, $alias = null)
     {
-        if ($table && !($table instanceof TauDbTable)) {
-            $table = new TauDbTable($table);
+        if (is_null($alias)) {
+            $pos = stripos($name, ' as ');
+            if ($pos !== false) {
+                $alias = substr($name, $pos + 4);
+                $name = substr($name, 0, $pos);
+            }
         }
 
-        if ($table instanceof TauDbTable) {
-            $t = $this->db->tableName($table->name);
-            if ($table->alias) {
-                $t .= " as " . $this->db->tableName($table->alias);
+        if ($name) {
+            $t = $this->db->tableName($name);
+            if ($alias) {
+                $t .= " as " . $this->db->tableName($alias);
             }
             return $t;
         }
@@ -1060,7 +1114,7 @@ class TauDbQuery
      */
     public function buildSelectQuery($pretty = true)
     {
-        $table = $this->getTable($this->table);
+        $table = $this->getTable($this->tableName, $this->tableAlias);
         if (!$table) {
             throw new RuntimeException("Missing table");
         }
@@ -1101,6 +1155,18 @@ class TauDbQuery
         }
 
         return $sql;
+    }
+
+    /**
+     * Reset parameters after a select query
+     */
+    public function reset() {
+        $this->fields = [];
+        $this->wheres = [];
+        $this->joins = [];
+        $this->orderBys = [];
+        $this->limit = null;
+        $this->offset = null;
     }
 
     /**
