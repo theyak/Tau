@@ -1,21 +1,4 @@
 <?php
-/**
- * MySQL Database Module For TAU
- *
- * @Author          theyak
- * @Copyright       2011
- * @Project Page    None!
- * @Dependencies    TauError
- * @Documentation   None!
- *
- * changelog:
- *   1.0.0  Apr 14, 2013  Created
- *   1.0.1  Mar 26, 2014  Add dbDatetime
- */
-
-if (!defined('TAU')) {
-	exit;
-}
 
 class TauSQLite extends TauDb
 {

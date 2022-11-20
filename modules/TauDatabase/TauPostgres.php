@@ -1,19 +1,4 @@
 <?php
-/**
- * Postgres Database Module For TAU
- * This definitely does not work completely and I probably
- * shouldn't even include it in Tau.
- *
- * @Author          theyak
- * @Copyright       2022
- *
- * changelog:
- *   0.0.1  Jan 18, 2022  Created
- */
-
-if (!defined('TAU')) {
-	exit;
-}
 
 class TauPostgres extends TauDb
 {
@@ -91,7 +76,6 @@ class TauPostgres extends TauDb
 		return $this->server->connection;
 	}
 
-
 	/**
 	 * Use a particular database
 	 *
@@ -104,7 +88,6 @@ class TauPostgres extends TauDb
 		$this->connect();
 	}
 
-
 	/**
 	 * Close connection to database
 	 */
@@ -115,8 +98,6 @@ class TauPostgres extends TauDb
 			$this->server->connection = null;
 		}
 	}
-
-
 
 	/**
 	 * Make a query to the database server
@@ -131,7 +112,6 @@ class TauPostgres extends TauDb
 		$this->rs = pg_query($connection, $sql);
 		return $this->rs;
 	}
-
 
 	/**
 	 * Release a result set from memory
@@ -148,7 +128,6 @@ class TauPostgres extends TauDb
 		}
 	}
 
-
 	/**
 	 * Retrieve last error
 	 *
@@ -158,7 +137,6 @@ class TauPostgres extends TauDb
 	{
 		return pg_last_error($this->server->connection);
 	}
-
 
 	/**
 	 * Convert a PHP string into an SQL field name
@@ -188,7 +166,6 @@ class TauPostgres extends TauDb
 			$alias = trim($alias, "\"\r\n\t ");
 			$alias = pg_escape_identifier($this->server->connection, $alias);
 		}
-
 
 		// Look for SQL function. "(" isn't allowed in field names
 		if (strpos($field, "(")) {
@@ -221,7 +198,6 @@ class TauPostgres extends TauDb
 		return $field;
 	}
 
-
 	/**
 	 * Convert a PHP string into an SQL table name
 	 *
@@ -232,7 +208,6 @@ class TauPostgres extends TauDb
 	{
 		return $this->dbFieldName($table_name);
 	}
-
 
 	/**
 	 * Convert a PHP string value to a string value suitable for insertion in to SQL query.
@@ -251,7 +226,6 @@ class TauPostgres extends TauDb
 		}
 	}
 
-
 	/**
 	 * Encode a timestamp in any of the standard PHP formats accepted
 	 * by DateTime() and strtotime() to database format
@@ -269,7 +243,6 @@ class TauPostgres extends TauDb
 		}
 	}
 
-
 	/**
 	 * Escape a string for insertion in to database.
 	 *
@@ -280,7 +253,6 @@ class TauPostgres extends TauDb
 	{
 		return pg_escape_string($this->server->connection, $unescaped_string);
 	}
-
 
 	/**
 	 * Fetch a row from the database
@@ -297,7 +269,6 @@ class TauPostgres extends TauDb
 		}
 	}
 
-
 	/**
 	 * Fetch a row from the database as on object
 	 *
@@ -312,7 +283,6 @@ class TauPostgres extends TauDb
 			return pg_fetch_object($this->rs);
 		}
 	}
-
 
 	/**
 	 * Fetch all rows from the database
@@ -333,7 +303,6 @@ class TauPostgres extends TauDb
 
 		return $rows;
 	}
-
 
 	/**
 	 * Retrieve all rows, each row as an object, from an SQL query
@@ -362,7 +331,6 @@ class TauPostgres extends TauDb
 		return $rows;
 	}
 
-
 	/**
 	 * Fetch all rows from the database storing data in an associative array.
 	 *
@@ -383,7 +351,6 @@ class TauPostgres extends TauDb
 		return $rows;
 	}
 
-
 	/**
 	 * Get the ID from the last insert
 	 * @return int|string
@@ -392,10 +359,22 @@ class TauPostgres extends TauDb
 	{
 		// Erm, postgres doesn't really suppport this.
 		// There is a "RETURNING" thing that can be appended
-		// to INSERT statements. Maybe look into that.
+		// to INSERT statements. This can be used like:
+
+		// $sql = $db->insertSql('users', [
+		// 	'username' => 'Bobby',
+		// 	'password' => 'pw',
+		// 	'email' => 'bobby@example.com',
+		// 	'created_on' => new DateTime(),
+		// 	'last_login' => new DateTime()
+		// ]);
+
+		// $sql .= ' RETURNING ("user_id")';
+		// $rs = $db->query($sql);
+		// $id = $db->fetchValue($rs);
+
 		return 0;
 	}
-
 
 	/**
 	 * Get number of rows affected by last INSERT or UPDATE
@@ -407,7 +386,6 @@ class TauPostgres extends TauDb
 		return pg_affected_rows($this->server->connection);
 	}
 
-
 	/**
 	 * Get number of rows returned in last query
 	 *
@@ -417,7 +395,6 @@ class TauPostgres extends TauDb
 	{
 		return pg_num_rows($rs ? $rs : $this->rs);
 	}
-
 
 	/**
 	 * Determine if table exists in database
@@ -444,7 +421,6 @@ class TauPostgres extends TauDb
 		return !!$row['to_regclass'];
 	}
 
-
 	/**
 	 * Determine if field exists in table
 	 *
@@ -467,8 +443,6 @@ class TauPostgres extends TauDb
 		$this->freeResult($rs);
 		return !!$row;
 	}
-
-
 
 	/**
 	 * Perform an Insert/Update operation when there is a duplicate
@@ -498,7 +472,7 @@ class TauPostgres extends TauDb
 		} else {
 			// This takes a guess at the conflicting column if none is provided.
 			// Why does the postgres library not offer an exception handling system?
-			// It is awful. I should probably convert this whole class to PDO.
+			// This is awful. I should probably convert this whole class to PDO.
 			$old_handler = set_error_handler(function ($errno, $errstr) use ($table, $insert, $update) {
 				$pos = strpos($errstr, 'DETAIL:  Key (');
 				if ($pos !== false) {
