@@ -128,9 +128,9 @@ class TauSQLite extends TauDb
 			$alias = null;
 		}
 
-		$field = trim(trim($field, '"\r\n\t '));
+		$field = trim($field, "\"\r\n\t ");
 		if ($alias) {
-			$alias = trim($alias, '"\r\n\t ');
+			$alias = trim($alias, "\"\r\n\t ");
 			$alias = '"' . $this->dbEscape($alias) . '"';
 		}
 
@@ -150,7 +150,7 @@ class TauSQLite extends TauDb
 		// Everyday, ordinary field name
 		$parts = explode('.', $field);
 		foreach ($parts as $key => $value) {
-			$value = trim($value, '"\r\n\t ');
+			$value = trim($value, "\"\r\n\t ");
 			if ($value === "*") {
 				$parts[$key] = "*";
 			} else {
@@ -282,7 +282,7 @@ class TauSQLite extends TauDb
 	 * @param SQLite3Result $rs
 	 * @return array An array of records retrieved, each record as an object.
 	 */
-	protected function dbFetchAllObject($rs = null)
+	protected function dbFetchAllObject($rs = null, $id = null)
 	{
 		if (!$rs) {
 			$rs = $this->rs;
@@ -290,7 +290,15 @@ class TauSQLite extends TauDb
 
 		$rows = [];
 		while ($row = $rs->fetchArray(SQLITE3_ASSOC)) {
-			$rows[] = (object) $row;
+			if (!$id) {
+				$rows[] = (object) $row;
+			} else if ($id === true) {
+				$rows[reset($row)] = (object) $row;
+			} else if (isset($row[$id])) {
+				$rows[$row[$id]] = $row;
+			} else {
+				$rows[] = (object) $row;
+			}
 		}
 
 		$this->numRows = count($rows);
@@ -319,33 +327,6 @@ class TauSQLite extends TauDb
 				$rows[$row[$id]] = $row;
 			} else {
 				$rows[reset($row)] = $row;
-			}
-		}
-
-		$this->numRows = count($rows);
-
-		return $rows;
-	}
-
-	/**
-	 * Fetch all rows from the database storing data in an associative array
-	 *
-	 * @param SQLite3Result $rs
-	 * @param string $id Name of field to use as ID. If left blank, the first field is used.
-	 * @return array
-	 */
-	protected function dbFetchAllObjectWithId($rs, $id = '')
-	{
-		if (!$rs) {
-			$rs = $this->rs;
-		}
-
-		$rows = [];
-		while ($row = $rs->fetchArray(SQLITE3_ASSOC)) {
-			if ($id && isset($row[$id])) {
-				$rows[$row[$id]] = (object) $row;
-			} else {
-				$rows[reset($row)] = (object) $row;
 			}
 		}
 
@@ -411,7 +392,7 @@ class TauSQLite extends TauDb
 	 */
 	public function dbIsField($field, $table, $dbName = null)
 	{
-		$field = trim($field, '"\r\n\t ');
+		$field = trim($field, "\"\r\n\t ");
 		$table = $this->dbTableName($table);
 
 		$query = "PRAGMA table_info({$table})";
