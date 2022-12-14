@@ -19,7 +19,7 @@ class TauPgsql extends TauDb
         $this->server = clone $server;
     }
 
-    function connect($retries = 0)
+    public function connect($retries = 0)
     {
         if ($this->server->connection) {
             return $this->server->connection;
@@ -302,10 +302,9 @@ class TauPgsql extends TauDb
 
         $rows = [];
         while ($row = $this->dbFetch()) {
-            var_dump($row);
-            if ($id === true) {
+            if ($id === true || $id === "") {
                 $rows[reset($row)] = (object) $row;
-            } else if (isset($row, $id)) {
+            } else if (isset($row[$id])) {
                 $rows[$row[$id]] = (object) $row;
             } else {
                 $rows[] = (object) $row;
@@ -335,9 +334,9 @@ class TauPgsql extends TauDb
 
         $rows = [];
         while ($row = $this->dbFetch()) {
-            if ($id === true) {
+            if ($id === true || $id === "") {
                 $rows[reset($row)] = $row;
-            } else if (isset($row, $id)) {
+            } else if (isset($row[$id])) {
                 $rows[$row[$id]] = $row;
             } else {
                 $rows[] = $row;
@@ -467,6 +466,7 @@ class TauPgsql extends TauDb
             }
 
             if ($key) {
+                $key = $this->dbTableName($key);
                 $values = [];
                 foreach ($update as $fieldName => $value) {
                     $values[] = $this->fieldName($fieldName) . ' = ' . $this->escape($value);

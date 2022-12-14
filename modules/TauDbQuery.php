@@ -138,6 +138,13 @@ class TauDbQuery
     public $offset;
 
     /**
+     * Raw SQL query
+     *
+     * @var string
+     */
+    public $raw;
+
+    /**
      * ID column
      *
      * @var string
@@ -712,10 +719,40 @@ class TauDbQuery
      *     ->id("username")
      *
      * @param  string|true Name of ID column. Can use `true` to assume first column in fetch() and findAll() calls.
+     * @return $this
      */
     public function id($id = true)
     {
         $this->id = $id;
+        return $this;
+    }
+
+    /**
+     * For those brave, set a raw SQL query. Overrides everything else!
+     * There is very very dumb logic for escaping named parameters.
+     * It's just a str_replace. There is no tokenizing to make sure
+     * the same key doesn't exist in a string value or in multiple
+     * places in your your query. Use at your own risk.
+     *
+     * Raw query:
+     *
+     *     ->raw('SELECT username FROM users WHERE user_id = 12')->first();
+     *
+     * Raw query with parameters:
+     *
+     *     ->raw('SELECT username FROM users WHERE user_id < :userId', [':userId' => 12])->fetchAll();
+     *
+     * @param  string $sql The raw query string
+     * @param  array $params Named parameters
+     * @return $this
+     */
+    public function raw($sql, $params = [])
+    {
+        foreach ($params as $key => $value) {
+            $sql = str_replace($key, $this->db->escape($value), $sql);
+        }
+
+        $this->raw = $sql;
         return $this;
     }
 
@@ -940,6 +977,28 @@ class TauDbQuery
         return $rows;
     }
 
+    /**
+     * Execute a raw query. Be very very careful with this. It's really
+     * not something you should be doing with a query builder, but some
+     * people insist. Very limited and dumb support for escaping named
+     * parameters. There is no tokenization, so if the token exists
+     * anywhere in the query, it will be replaced.
+     *
+     *     ->exec(
+     *         'UPDATE users SET username = :username WHERE user_id = :userId',
+     *         [
+     *             ":username" => "Johnny",
+     *             ":userId" => 12
+     *         ]
+     *     )
+     * @param  string $sql The raw query string
+     * @param  array $params Named parameters
+     * @return void
+     */
+    public function exec($sql, $params) {
+        $sql = $this->raw($sql, $params);
+        $this->db->query($sql);
+    }
 
     /**
      * Cast an object of one type (usually stdclass) to another via shallow copy.
@@ -1143,6 +1202,11 @@ class TauDbQuery
      */
     public function buildSelectQuery()
     {
+        // Oh dear.
+        if ($this->raw) {
+            return $this->raw;
+        }
+
         $table = $this->getTable($this->tableName, $this->tableAlias);
         if (!$table) {
             throw new RuntimeException("Missing table");
