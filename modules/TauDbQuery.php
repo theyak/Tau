@@ -995,9 +995,10 @@ class TauDbQuery
      * @param  array $params Named parameters
      * @return void
      */
-    public function exec($sql, $params) {
-        $sql = $this->raw($sql, $params);
-        $this->db->query($sql);
+    public function exec($sql, $params)
+    {
+        $this->raw($sql, $params);
+        $this->db->query($this->raw);
     }
 
     /**
