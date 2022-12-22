@@ -529,8 +529,12 @@ class TauDbQuery
      *     ->where("username", ["John", "Paul", "George", "Ringo"])
      *     ->where("user_id", "<", 10)
      *     ->where("username", "like", "bob%")
-     *     ->where("deleted_at", null)
+     *     ->where("deleted_at", 'is', null);
+     *     ->where("deleted_at", "is not", null)
+     *     ->where("registed")
+     *     ->where("!registered")
      *     ->where("creatad_at", ">", new DateTime("-1 week"))
+     *     ->where("deleted_at")
      *     ->where(function($qb) {
      *         $qb->where("username", "bob");
      *         $qb->orWhere("email", "bob@bob.com");
@@ -566,6 +570,22 @@ class TauDbQuery
             call_user_func_array($field, [&$b]);
             $this->wheres[] = [$type, $b];
             return $this;
+        }
+
+        // Allow short circuting a single value as a boolean
+        if (is_string($field) && $operation === null && $value === null) {
+            if ($field[0] === "!") {
+                $field = substr($field, 1);
+                if (!$this->wheres) {
+                    return $this->where($field, 'is', null)->orWhere($field, '=', 0);
+                }
+                return $this->where(function ($qb) use ($field) {
+                    $qb->where($field, 'is', null)->orWhere($field, '=', 0);
+                });
+            } else {
+                $operation = '!=';
+                $value = 0;
+            }
         }
 
         // Allow short circuiting by defaulting the an "=", "is", or "in" comparison
@@ -1105,8 +1125,10 @@ class TauDbQuery
 
             $sql .= ' ' . strtoupper($where[0]) . ' ';
             $sql .= $this->db->fieldName($where[1]['field']);
-            $sql .= ' ' . strtoupper($where[1]['operation']) . ' ';
-            $sql .= $this->db->escape($where[1]['value']);
+            if ($where[1]['operation']) {
+                $sql .= ' ' . strtoupper($where[1]['operation']) . ' ';
+                $sql .= $this->db->escape($where[1]['value']);
+            }
         }
 
         return $sql;
