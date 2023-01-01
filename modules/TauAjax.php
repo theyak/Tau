@@ -19,8 +19,8 @@ class TauAjax
 	/**
 	 * Send JSON data. The data passed in will be converted to a JSON
 	 * string appropriate for sending across the intertubes.
-	 * 
-	 *  @param mixed $data Data to send
+	 *
+	 * @param  mixed $data Data to send
 	 */
 	public static function send_json($data)
 	{
@@ -38,7 +38,7 @@ class TauAjax
 	/**
 	 * Send text data.
 	 *
-	 * @param type $string
+	 * @param  string $string
 	 */
 	public static function send_string($string)
 	{
@@ -50,7 +50,7 @@ class TauAjax
 	/**
 	 * Send text data.
 	 *
-	 * @param type $string
+	 * @param  string $string
 	 */
 	public static function send_text($string)
 	{
@@ -63,12 +63,12 @@ class TauAjax
 		exit;
 	}
 
-	
-	
+
+
 	/**
 	 * Send URL formated parameters. Very useful for REST-like applications.
-	 * 
-	 * @param array $parameters 
+	 *
+	 * @param array $parameters
 	 * @param string $delimiter Delimiter to use for query, usually & or &amp;
 	 */
 	static public function send_query($parameters, $delimiter = '&')
@@ -81,15 +81,15 @@ class TauAjax
 		echo http_build_query($parameters, '', $delimiter);
 		exit;
 	}
-	
-	
+
+
 
 	/**
 	 * Respond to AJAX with a status of Alert and the 'msg' field set to
 	 * text to display in an alert box.
 	 *
-	 * @param string $message
-	 * @param $data Optional data to send along with JSON result
+	 * @param  string $message
+	 * @param  mixed $data Optional data to send along with JSON result
 	 */
 	static public function alert($message, $data = array())
 	{
@@ -111,7 +111,7 @@ class TauAjax
 	/**
 	 * Respond to AJAX with a status of OK. Same as TauAjax::OK().
 	 *
-	 * @param array $data Additional parameters to send with success result
+	 * @param  array $data Additional parameters to send with success result
 	 */
 	public static function success($data = array())
 	{
@@ -127,28 +127,28 @@ class TauAjax
 		self::send_json($result);
 	}
 
-	
-	
+
+
 	/**
 	 * Respond to AJAX with a status of OK. Same as TauAjax::success().
 	 *
-	 * @param array $data Additional parameters to send with success result
+	 * @param  array $data Additional parameters to send with success result
 	 */
 	public static function OK($data = array())
 	{
 		self::success($data);
 	}
 
-	
-	
+
+
 	/**
 	 * Send an AJAX response with 'status' = 'Error', 'errmsg' equal to the contents
 	 * of the $errmsg paramater, 'errno' equal to the contents of the $errno
 	 * paramater, and 'data' equal to the contents of the $data parameter.
 	 *
-	 * @param string $errmsg Error message
-	 * @param integer $errno Error number, default 0
-	 * @param array $data Additional parameters to send with error result
+	 * @param  string $errmsg Error message
+	 * @param  int $errno Error number, default 0
+	 * @param  array $data Additional parameters to send with error result
 	 */
 	public static function error($errmsg, $errno = 0, $data = array())
 	{
@@ -166,13 +166,13 @@ class TauAjax
 		self::send_json($result);
 	}
 
-	
-	
+
+
 	/**
 	 * Helper function to compact for html, converting new lines, tabs, and
 	 * multiple spaces to a single space.
 	 *
-	 * @param string &$message
+	 * @param  string &$message
 	 */
 	static public function compact(&$message)
 	{
