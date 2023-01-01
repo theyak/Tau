@@ -531,8 +531,8 @@ class TauDbQuery
      *     ->where("username", "like", "bob%")
      *     ->where("deleted_at", 'is', null);
      *     ->where("deleted_at", "is not", null)
-     *     ->where("registed")
-     *     ->where("!registered")
+     *     ->where("registed") Alias of ->where("registered", "=", true)
+     *     ->where("!registered") Alias of ->where("registered", "!=", true)
      *     ->where("creatad_at", ">", new DateTime("-1 week"))
      *     ->where("deleted_at")
      *     ->where(function($qb) {
@@ -576,16 +576,11 @@ class TauDbQuery
         if (is_string($field) && $operation === null && $value === null) {
             if ($field[0] === "!") {
                 $field = substr($field, 1);
-                if (!$this->wheres) {
-                    return $this->where($field, 'is', null)->orWhere($field, '=', 0);
-                }
-                return $this->where(function ($qb) use ($field) {
-                    $qb->where($field, 'is', null)->orWhere($field, '=', 0);
-                });
+                $operation = "!=";
             } else {
-                $operation = '!=';
-                $value = 0;
+                $operation = '=';
             }
+            $value = true;
         }
 
         // Allow short circuiting by defaulting the an "=", "is", or "in" comparison
