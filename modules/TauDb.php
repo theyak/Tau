@@ -2033,7 +2033,7 @@ if (!class_exists('TauSqlExpression'))
 			return $this->expression;
 		}
 
-		public function toString()
+		public function __toString()
 		{
 			return $this->expression;
 		}

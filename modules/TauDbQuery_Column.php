@@ -23,7 +23,7 @@ class TauDbQuery_Column {
             $this->function = $field->function;
             $this->raw = $field->raw;
         } else if ($field instanceof TauSqlExpression) {
-            $this->name = (string) $field;
+            $this->name = $field->get();
             $this->alias = null;
             $this->function = null;
             $this->raw = true;

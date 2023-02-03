@@ -866,6 +866,18 @@ class TauDbQuery
     }
 
     /**
+     * Create a raw value that will be put in the SQL query exactly as is.
+     *
+     *     ->select($qb->raw('user_id * 10 as foo'))
+     *
+     * @param  string $expr
+     * @return TauSqlExpression
+     */
+    public static function raw($expr) {
+        return new TauSqlExpression($expr);
+    }
+
+    /**
      * For those brave, set a raw SQL query. Overrides everything else!
      * There is very very dumb logic for escaping named parameters.
      * It's just a str_replace. There is no tokenizing to make sure
@@ -874,17 +886,17 @@ class TauDbQuery
      *
      * Raw query:
      *
-     *     ->raw('SELECT username FROM users WHERE user_id = 12')->first();
+     *     ->query('SELECT username FROM users WHERE user_id = 12')->first();
      *
      * Raw query with parameters:
      *
-     *     ->raw('SELECT username FROM users WHERE user_id < :userId', [':userId' => 12])->fetchAll();
+     *     ->query('SELECT username FROM users WHERE user_id < :userId', [':userId' => 12])->fetchAll();
      *
      * @param  string $sql The raw query string
      * @param  array $params Named parameters
      * @return $this
      */
-    public function raw($sql, $params = [])
+    public function query($sql, $params = [])
     {
         foreach ($params as $key => $value) {
             $sql = str_replace($key, $this->db->escape($value), $sql);
