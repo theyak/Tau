@@ -316,7 +316,7 @@ class TauDbQuery
     public function table($table, $alias = null)
     {
         if (is_null($alias)) {
-            $pos = stripos($table, ' as ');
+            $pos = stripos($table, " as ");
             if ($pos !== false) {
                 $alias = substr($table, $pos + 4);
                 $table = substr($table, 0, $pos);
@@ -404,23 +404,111 @@ class TauDbQuery
     }
 
     /**
-     * Set field or fields to retrieve from table
+     * Performs a specified operation on the specified column or array of columns
      *
-     *     ->select("user_id", "username", "email")
-     *
-     * @param  array|string|TauSqlExpression $fields
+     * @param  string Name of SQL function to use
+     * @param  array|string|TauSqlExpression|TauDbQuery_Column $fields
      * @return $this
      */
-    public function select(...$fields)
+    public function selectFunction($fn, ...$fields)
     {
         // Check if an array of fields, rather than multiple values, was passed.
         if (is_array($fields[0])) {
             $fields = $fields[0];
         }
 
-        $this->fields = array_merge($this->fields, $fields);
+        $fn = $fn ? strtoupper($fn) : null;
+
+        foreach ($fields as $field) {
+            if (is_array($field)) {
+                foreach ($field as $alias => $name) {
+                    $field = new TauDbQuery_Column($this->db, $name);
+                    if (!is_numeric($alias)) {
+                        $field->alias = $alias;
+                    }
+                    $field->function = $fn;
+                    $this->fields[] = $field;
+                }
+            } else {
+                $field = new TauDbQuery_Column($this->db, $field);
+                $field->function = $fn;
+                $this->fields[] = $field;
+            }
+        }
 
         return $this;
+    }
+
+    /**
+     * Set field or fields to retrieve from table
+     *
+     *     ->select("first_name", "last_name")
+     *     ->select(["first_name", "last_name"])
+     *     ->select("first_name as fn", "last_name as ln")
+     *     ->select(["fn" => "first_name", "ln" => "last_name"])
+     *     ->select("accounts.first_name, accounts.last_name")
+     *
+     * @param  array|string|TauSqlExpression|TauDbQuery_Column $fields
+     * @return $this
+     */
+    public function select(...$fields)
+    {
+        return $this->selectFunction(null, $fields);
+    }
+
+    /**
+     * Performs a SUM operation on the specified column or array of columns
+     *
+     * @param  array|string|TauSqlExpression|TauDbQuery_Column $fields
+     * @return $this
+     */
+    public function sum(...$fields)
+    {
+        return $this->selectFunction('SUM', $fields);
+    }
+
+    /**
+     * Performs an AVG operation on the specified column or array of columns
+     *
+     * @param  array|string|TauSqlExpression|TauDbQuery_Column $fields
+     * @return $this
+     */
+    public function avg(...$fields)
+    {
+        return $this->selectFunction('AVG', $fields);
+    }
+
+    /**
+     * Performs a MIN operation on the specified column or array of columns
+     *
+     * @param  array|string|TauSqlExpression|TauDbQuery_Column $fields
+     * @return $this
+     */
+    public function min(...$fields)
+    {
+        return $this->selectFunction('MIN', $fields);
+    }
+
+    /**
+     * Performs a MAX operation on the specified column or array of columns
+     *
+     * @param  array|string|TauSqlExpression|TauDbQuery_Column $fields
+     * @return $this
+     */
+    public function max(...$fields)
+    {
+        return $this->selectFunction('MAX', $fields);
+    }
+
+    /**
+     * Performs a count on the specified column or array of columns
+     *
+     * @param  array|string|TauSqlExpression|TauDbQuery_Column $fields
+     * @return $this
+     */
+    public function count(...$fields)
+    {
+        return $this->selectFunction('COUNT', $fields);
     }
 
     /**
@@ -668,8 +756,21 @@ class TauDbQuery
      */
     public function group($field)
     {
-        $this->groupBys[] = $field;
+        $this->groupBys[] = new TauDbQuery_Column($this->db, $field);
         return $this;
+    }
+
+    /**
+     * Set GROUP BY condition
+     *
+     *    ->groupBy("age")
+     *
+     * @param  string|TauSqlExpression $field
+     * @return $this
+     */
+    public function groupBy($field)
+    {
+        return $this->group($field);
     }
 
     /**
@@ -688,8 +789,30 @@ class TauDbQuery
      */
     public function order($field, $desc = false)
     {
-        $this->orderBys[] = [$field, $desc === true || $desc === "desc"];
+        $this->orderBys[] = [
+            new TauDbQuery_Column($this->db, $field),
+            $desc === true || $desc === "desc"
+        ];
         return $this;
+    }
+
+    /**
+     * Set ORDER BY condition
+     *
+     *    ->order("username")
+     *
+     * Order descending:
+     *
+     *    ->orderBy("username", true)
+     *    ->orderBy("username", "desc")
+     *
+     * @param  string|TauSqlExpression $field
+     * @param  bool|"desc" $desc
+     * @return $this
+     */
+    public function orderBy($field, $desc = false)
+    {
+        return $this->order($field, $desc);
     }
 
     /**
@@ -1140,7 +1263,7 @@ class TauDbQuery
     public function getTable($name = null, $alias = null)
     {
         if (is_null($alias)) {
-            $pos = stripos($name, ' as ');
+            $pos = stripos($name, " as ");
             if ($pos !== false) {
                 $alias = substr($name, $pos + 4);
                 $name = substr($name, 0, $pos);
@@ -1198,16 +1321,21 @@ class TauDbQuery
     /**
      * Construct a list of columns for query
      *
-     * @param string|string[] List of columns
+     * @param TauDbQuery_Column[]|string[] List of columns
      * @return string
      */
     public function columns($columns)
     {
-        if (is_string($columns)) {
-            $columns = [$columns];
+        $fields = [];
+
+        foreach ($columns as $column) {
+            if (is_string($column)) {
+                $fields[] = (string)(new TauDbQuery_Column($this->db, $column));
+            } else {
+                $fields[] = (string) $column;
+            }
         }
 
-        $fields = array_map(fn($f) => $this->db->fieldName($f), $columns);
         $fields = implode(", ", $fields);
 
         return $fields;
@@ -1255,7 +1383,7 @@ class TauDbQuery
 
             $conditions = [];
             foreach ($this->orderBys as $orderBy) {
-                $conditions[] = $this->db->fieldName($orderBy[0]) . ($orderBy[1] ? ' DESC' : '');
+                $conditions[] = (string)($orderBy[0]) . ($orderBy[1] ? ' DESC' : '');
             }
             $sql .= implode(', ', $conditions);
         }
