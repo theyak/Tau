@@ -78,6 +78,14 @@
  *     ->ttl(30)
  *     ->fetch();
  *
+ * // Raw selects
+ * $qb = new TauDbQuery($db);
+ * $qb
+ *    ->table("users")
+ *    ->select("user_id", $qb->raw('CONCAT(first_name, " ", last_name)'))
+ *    ->where("created_at", ">=", new DateTime("-1 day"))
+ *    ->fetch();
+ *
  * When using TauDb, you will often have a single global variable referencing the
  * TauDb object. The following example shows usage of a function to use the
  * query builder.
@@ -377,7 +385,7 @@ class TauDbQuery
     /**
      * Delete one or more rows from table
      *
-     *     table("users")->where(["user_id" => 10])->delete()
+     *     ->table("users")->where(["user_id" => 10])->delete()
      */
     public function delete()
     {
@@ -391,7 +399,7 @@ class TauDbQuery
     /**
      * Drop table
      *
-     *     table("users")->drop()
+     *     ->table("users")->drop()
      */
     public function drop()
     {
@@ -401,7 +409,7 @@ class TauDbQuery
     /**
      * Truncate table
      *
-     *     table("users")->truncate()
+     *     ->table("users")->truncate()
      */
     public function truncate()
     {
@@ -423,18 +431,19 @@ class TauDbQuery
     /**
      * Check if table has column
      *
-     *     table("users")->hasColumn("username")
+     *     ->table("users")->hasColumn("username")
      *
      * @param  string|TauDbQuery_Column $column If not provided, first ::select() column is used
      * @return bool
      */
-    public function hasColumn($column = null) {
+    public function hasColumn($column = null)
+    {
         if ($column) {
             return $this->table->hasColumn($column);
         } else {
             return $this->table->hasColumn($this->fields[0]);
         }
-    }
+}
 
     /**
      * Performs a specified operation on the specified column or array of columns
