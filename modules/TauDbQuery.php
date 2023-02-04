@@ -439,6 +439,8 @@ class TauDbQuery
     /**
      * Performs a specified operation on the specified column or array of columns
      *
+     *    ->selectFunction('UPPER', ["first_name", "last_name"])
+     *
      * @param  string Name of SQL function to use
      * @param  array|string|TauSqlExpression|TauDbQuery_Column $fields
      * @return $this
@@ -552,7 +554,7 @@ class TauDbQuery
      * @param  string|TauDbQuery_Table $table The table to join - As a string, it can contain an "as" alias
      * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
      * @param  string $operator The operator to compare fields against
-     * @param  string $destField Field to comapare with
+     * @param  string $destField Field to compare with
      * @param  string $type The type of join. One of left, right, inner, outer. Defaults to LEFT
      * @return $this
      */
@@ -585,7 +587,7 @@ class TauDbQuery
      * @param  string $table The table to join - As a string, it can contain an "as" alias
      * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
      * @param  string $operator The operator to compare fields against
-     * @param  string $destField Field to comapare with
+     * @param  string $destField Field to compare with
      * @return $this
      */
     public function leftJoin($table, $srcField, $operator, $destField)
@@ -601,7 +603,7 @@ class TauDbQuery
      * @param  string $table The table to join - As a string, it can contain an "as" alias
      * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
      * @param  string $operator The operator to compare fields against
-     * @param  string $destField Field to comapare with
+     * @param  string $destField Field to compare with
      * @return $this
      */
     public function rightJoin($table, $srcField, $operator, $destField)
@@ -617,7 +619,7 @@ class TauDbQuery
      * @param  string $table The table to join - As a string, it can contain an "as" alias
      * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
      * @param  string $operator The operator to compare fields against
-     * @param  string $destField Field to comapare with
+     * @param  string $destField Field to compare with
      * @return $this
      */
     public function innerJoin($table, $srcField, $operator, $destField)
@@ -633,7 +635,7 @@ class TauDbQuery
      * @param  string $table The table to join - As a string, it can contain an "as" alias
      * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
      * @param  string $operator The operator to compare fields against
-     * @param  string $destField Field to comapare with
+     * @param  string $destField Field to compare with
      * @return $this
      */
     public function outerJoin($table, $srcField, $operator, $destField)
