@@ -1,7 +1,5 @@
 <?php
 
-use TauDatabase\TauDbJoin;
-
 /**
  * This is an extremely simple SQL query builder. It can't do anything even
  * moderately complex, mostly because I wrote this in a couple hours one evening
@@ -10,12 +8,13 @@ use TauDatabase\TauDbJoin;
  * much better query builders out in the wild, use those instead.
  *
  * // Get user with user_id 12
- * $sq = new TauDbQuery($db);
- * $user = $sq->table('users')->select('username')->where('user_id', '=', 12)->first();
+ * $qb = new TauDbQuery($db);
+ * $user = $qb->table('users')->select('username')->where('user_id', '=', 12)->first();
  *
  * // Fetch all users with user_id less than 10 and created at "2022-01-01"
  * // Limiting to 2 users, skipping the first 5 users.
- * $sq = new TauDbQuery($db)
+ * $qb = new TauDbQuery($db);
+ * $qb
  *     ->table("users")
  *     ->select("first_name", "last_name")
  *     ->where("user_id", "<", 10)
@@ -25,37 +24,56 @@ use TauDatabase\TauDbJoin;
  *     ->fetch();
  *
  * // Fetch all users with id <= 10 or user_id between 100 and 1000
- * $sq = new TauDbQuery($db)
+ * $qb = new TauDbQuery($db);
+ * $qb
  *     ->table("users")
- *     ->select("first_name", "last_name")
- *     ->where("user_id", "<=", 10)
+ *     ->select("users.first_name", "users.last_name", "posts.message")
+ *     ->leftJoin("posts", "users.id", "=", "posts.user_id")
+ *     ->where("users.user_id", "<=", 10)
  *     ->orWhere(function($t) {
- *         $t->where("user_id", ">=", 100);
- *         $t->where("user_id", "<=", 1000);
+ *         $t->where("users.user_id", ">=", 100);
+ *         $t->where("users.user_id", "<=", 1000);
  *     })
- *     ->order("user_id")
+ *     ->order("users.user_id")
+ *     ->fetch();
+ *
+ * // Same as above except with table aliases
+ * $qb = new TauDbQuery($db);
+ * $qb
+ *     ->table("users as u")
+ *     ->select("u.first_name", "u.last_name", "p.message")
+ *     ->leftJoin("posts as p", "u.id", "=", "p.user_id")
+ *     ->where("u.user_id", "<=", 10)
+ *     ->orWhere(function($t) {
+ *         $t->where("u.user_id", ">=", 100);
+ *         $t->where("u.user_id", "<=", 1000);
+ *     })
+ *     ->order("u.user_id")
  *     ->fetch();
  *
  * // Get user ids and usernames for all ids <= 10
- * $sq = new TauDbQuery($db)
+ * $qb = new TauDbQuery($db);
+ * $qb
  *     ->table("users")
  *     ->select("user_id", "username")
  *     ->where("user_id", "<=", 10)
  *     ->pairs()
  *
  * // Get usernames for all ids <= 10
- * $sq = new TauDbQuery($db)
+ * $qb = new TauDbQuery($db);
+ * $qb
  *     ->table("users")
  *     ->select("username")
  *     ->where("user_id", "<=", 10)
  *     ->column()
  *
  * // You can also cast to objects and use the TauDb cache
- * $sq = new TauDbQuery($db)
+ * $qb = new TauDbQuery($db);
+ * $qb
  *     ->table("users")
  *     ->select("first_name", "last_name")
  *     ->where("user_id", "<=", 100)
- *     ->order("user_id")
+ *     ->order("user_id", "DESC")
  *     ->cast(User::class)
  *     ->ttl(30)
  *     ->fetch();
@@ -75,18 +93,12 @@ use TauDatabase\TauDbJoin;
 class TauDbQuery
 {
     /**
-     * The table name
+     * Table information
      *
-     * @var string
+     * @var TauDbQuery_Table
      */
-    public $tableName;
+    public $table;
 
-    /**
-     * Table alias
-     *
-     * @var string
-     */
-    public $tableAlias;
 
     /**
      * The columns which are returned in a select query
@@ -98,7 +110,7 @@ class TauDbQuery
     /**
      * Joins for query
      *
-     * @var TauDbJoin[]
+     * @var TauDbQuery_Join[]
      */
     public $joins = [];
 
@@ -306,8 +318,9 @@ class TauDbQuery
     /**
      * Set table name to select from
      *
-     *     ->table("users");
-     *     ->table("users", "u");
+     *     ->table("users")
+     *     ->table("users", "u")
+     *     ->table("users as u")
      *
      * @param  string $table Table name
      * @param  string $alias optional alias for table
@@ -315,16 +328,10 @@ class TauDbQuery
      */
     public function table($table, $alias = null)
     {
-        if (is_null($alias)) {
-            $pos = stripos($table, " as ");
-            if ($pos !== false) {
-                $alias = substr($table, $pos + 4);
-                $table = substr($table, 0, $pos);
-            }
+        $this->table = new TauDbQuery_Table($this->db, $table);
+        if ($alias) {
+            $this->table->alias = $alias;
         }
-
-        $this->tableName = trim($table);
-        $this->tableAlias = is_string($alias) ? trim($alias) : null;
 
         return $this;
     }
@@ -338,7 +345,7 @@ class TauDbQuery
      */
     public function insert($data)
     {
-        $this->db->insert($this->tableName, $data);
+        $this->table->insert($data);
     }
 
     /**
@@ -350,7 +357,7 @@ class TauDbQuery
      */
     public function update($data)
     {
-        $this->db->update($this->tableName, $data, $this->buildWhere($this->wheres));
+        $this->table->update($$data, $this->buildWhere($this->wheres));
     }
 
     /**
@@ -364,17 +371,17 @@ class TauDbQuery
      */
     public function upsert($insert, $update = null, $conflict = [])
     {
-        $this->db->upsert($this->tableName, $insert, $update, $conflict);
+        $this->table->upsert($insert, $update, $conflict);
     }
 
     /**
      * Delete one or more rows from table
      *
-     *     ->delete()
+     *     table("users")->where(["user_id" => 10])->delete()
      */
     public function delete()
     {
-        $sql = "DELETE FROM " . $this->db->tableName($this->tableName);
+        $sql = "DELETE FROM " . $this->db->tableName($this->table->schema);
         if ($this->wheres) {
             $sql .= ' ' . $this->buildWhere($this->wheres);
         }
@@ -384,23 +391,49 @@ class TauDbQuery
     /**
      * Drop table
      *
-     *     ->drop
+     *     table("users")->drop()
      */
     public function drop()
     {
-        $sql = 'DROP TABLE ' . $this->db->tableName($this->tableName);
-        $this->db->query($sql);
+        $this->table->drop();
     }
 
     /**
      * Truncate table
      *
-     *     ->truncate()
+     *     table("users")->truncate()
      */
     public function truncate()
     {
-        $sql = 'TRUNCATE TABLE ' . $this->db->tableName($this->tableName);
-        $this->db->query($sql);
+        $this->table->truncate();
+    }
+
+    /**
+     * Check if table exists
+     *
+     *     table("users")->exists()
+     *
+     * @return bool
+     */
+    public function exists()
+    {
+        return $this->table->exists();
+    }
+
+    /**
+     * Check if table has column
+     *
+     *     table("users")->hasColumn("username")
+     *
+     * @param  string|TauDbQuery_Column $column If not provided, first ::select() column is used
+     * @return bool
+     */
+    public function hasColumn($column = null) {
+        if ($column) {
+            return $this->table->hasColumn($column);
+        } else {
+            return $this->table->hasColumn($this->fields[0]);
+        }
     }
 
     /**
@@ -516,7 +549,7 @@ class TauDbQuery
      *
      *     ->join('posts', 'users.id', '=', 'posts.user_id')
      *
-     * @param  string $table The table to join - As a string, it can contain an "as" alias
+     * @param  string|TauDbQuery_Table $table The table to join - As a string, it can contain an "as" alias
      * @param  string|Closure $srcField Field to join on or a closure with one or more "on()" clauses.
      * @param  string $operator The operator to compare fields against
      * @param  string $destField Field to comapare with
@@ -525,9 +558,9 @@ class TauDbQuery
      */
     public function join($table, $srcField, $operator = null, $destField = null, $type = "LEFT")
     {
-        $join = new TauDbJoin();
+        $join = new TauDbQuery_Join();
         $join->type = strtoupper($type);
-        $join->table = $table;
+        $join->table = new TauDbQuery_Table($this->db, $table);
 
         if ($srcField instanceof Closure) {
             // The $operator parameter may actually hold the $type
@@ -878,35 +911,6 @@ class TauDbQuery
     }
 
     /**
-     * For those brave, set a raw SQL query. Overrides everything else!
-     * There is very very dumb logic for escaping named parameters.
-     * It's just a str_replace. There is no tokenizing to make sure
-     * the same key doesn't exist in a string value or in multiple
-     * places in your your query. Use at your own risk.
-     *
-     * Raw query:
-     *
-     *     ->query('SELECT username FROM users WHERE user_id = 12')->first();
-     *
-     * Raw query with parameters:
-     *
-     *     ->query('SELECT username FROM users WHERE user_id < :userId', [':userId' => 12])->fetchAll();
-     *
-     * @param  string $sql The raw query string
-     * @param  array $params Named parameters
-     * @return $this
-     */
-    public function query($sql, $params = [])
-    {
-        foreach ($params as $key => $value) {
-            $sql = str_replace($key, $this->db->escape($value), $sql);
-        }
-
-        $this->raw = $sql;
-        return $this;
-    }
-
-    /**
      * Fetch a single value from the database. Basically returns the first
      * field of the first row returned from a query.
      *
@@ -1128,6 +1132,35 @@ class TauDbQuery
     }
 
     /**
+     * For those brave, set a raw SQL query. Overrides everything else!
+     * There is very very dumb logic for escaping named parameters.
+     * It's just a str_replace. There is no tokenizing to make sure
+     * the same key doesn't exist in a string value or in multiple
+     * places in your your query. Use at your own risk.
+     *
+     * Raw query:
+     *
+     *     ->query('SELECT username FROM users WHERE user_id = 12')->first();
+     *
+     * Raw query with parameters:
+     *
+     *     ->query('SELECT username FROM users WHERE user_id < :userId', [':userId' => 12])->fetchAll();
+     *
+     * @param  string $sql The raw query string
+     * @param  array $params Named parameters
+     * @return $this
+     */
+    public function query($sql, $params = [])
+    {
+        foreach ($params as $key => $value) {
+            $sql = str_replace($key, $this->db->escape($value), $sql);
+        }
+
+        $this->raw = $sql;
+        return $this;
+    }
+
+    /**
      * Execute a raw query. Be very very careful with this. It's really
      * not something you should be doing with a query builder, but some
      * people insist. Very limited and dumb support for escaping named
@@ -1147,7 +1180,7 @@ class TauDbQuery
      */
     public function exec($sql, $params)
     {
-        $this->raw($sql, $params);
+        $this->query($sql, $params);
         $this->db->query($this->raw);
     }
 
@@ -1269,25 +1302,18 @@ class TauDbQuery
      * via the table() method but may also be specified by a
      * #[dbtable('table_name')] attribute in a casted class.
      *
-     * @param  string|null $table
+     * @param  TauDbQuery_Table|string|null $table
      * @return string|bool
      */
-    public function getTable($name = null, $alias = null)
+    public function getTable($table)
     {
-        if (is_null($alias)) {
-            $pos = stripos($name, " as ");
-            if ($pos !== false) {
-                $alias = substr($name, $pos + 4);
-                $name = substr($name, 0, $pos);
-            }
+        if ($table instanceof TauDbQuery_Table) {
+            return (string) $table;
         }
 
-        if ($name) {
-            $t = $this->db->tableName($name);
-            if ($alias) {
-                $t .= " as " . $this->db->tableName($alias);
-            }
-            return $t;
+        if (is_string($table)) {
+            $table = new TauDbQuery_Table($this->db, $table);
+            return (string) $table;
         }
 
         if (!$this->cast) {
@@ -1310,7 +1336,7 @@ class TauDbQuery
     /**
      * Construct JOIN clauses
      *
-     * @param  TauDbJoin[] $joins
+     * @param  TauDbQuery_Join[] $joins
      * @return string
      */
     public function buildJoins($joins)
@@ -1360,12 +1386,12 @@ class TauDbQuery
      */
     public function buildSelectQuery()
     {
-        // Oh dear.
+        // Oh dear, nothing to build.
         if ($this->raw) {
             return $this->raw;
         }
 
-        $table = $this->getTable($this->tableName, $this->tableAlias);
+        $table = $this->getTable($this->table);
         if (!$table) {
             throw new RuntimeException("Missing table");
         }

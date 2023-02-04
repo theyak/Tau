@@ -1,8 +1,6 @@
 <?php
 
-namespace TauDatabase;
-
-class TauDbJoin
+class TauDbQuery_Join
 {
     public $type = "";
     public $table = null;

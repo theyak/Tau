@@ -1015,7 +1015,7 @@ class TauDb
     /**
      * Allow for raw SQL which has no munging.
      *
-     * @param String $sql
+     * @param string $sql
      */
     public function raw($sql)
     {
@@ -1666,7 +1666,6 @@ class TauDb
 
 		return $this->dbIsField($field, $table, $dbName);
 	}
-
 
 
 
