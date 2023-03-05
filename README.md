@@ -18,17 +18,8 @@ at 103 megabytes when it, and its dependencies (parts of Symphony, Doctrine, etc
 are installed. Of course, that framework has a large userbase and has several
 additional features, but nothing major.
 
-Some things I'd still like to do:
-
-* Improve Validate module
-* Improve Debug module
-* Implement Config module
-* Better docblocks
-* Standardize code
-
-As far as I know, Tau is only used on one major website. The website gets millions of hits a month,
+As far as I know, Tau is only used on one major website. The website gets 10s of millions of hits a month,
 so it should be pretty stable.
-
 
 Installation
 ============
