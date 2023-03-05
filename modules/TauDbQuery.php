@@ -556,6 +556,53 @@ class TauDbQuery
     }
 
     /**
+     * Performs a concatination operation among a set of fields
+     * separated by a string. This is probably the most common usage
+     * of SQL's CONCAT. The last parameter may be prefixed with "as "
+     * in order to assign an alias to the column.
+     * If you need something more complex, you will probably need
+     * to use ->raw() or TauDb::raw().
+     *
+     *   ->implode(" ", "first_name", "last_name", "as name")
+     *
+     * @param  string $separator
+     * @param  array $fields List of field names. Field names are generally strings, but may
+     *                       also be TauSQLExpressions. The last element may be prefixed with
+     *                       "as " in order to give an alias to the column
+     * @return $this
+     */
+    public function implode($separator, ...$fields) {
+        $escaped_fields = [];
+        $alias = "";
+
+        foreach ($fields as $field) {
+            if ($field instanceof TauSqlExpression) {
+                $escaped_fields[] = $field->get();
+                continue;
+            }
+            if (stripos($field, "as ") === 0) {
+                $alias = substr($field, 3);
+                break;
+            }
+            $escaped_fields[] = trim($this->db->fieldName($field));
+        }
+        $sql = "CONCAT(";
+        $sql .= implode(", " . $this->db->stringify($separator) . ", ", $escaped_fields);
+        $sql .= ")";
+        $concat = $this->raw($sql);
+
+        $field = new TauDbQuery_Column($this->db, $concat);
+
+        if ($alias) {
+            $field->alias = $alias;
+        }
+
+        $this->fields[] = $field;
+
+        return $this;
+    }
+
+    /**
      * Add a join statement to the query
      *
      *     ->join('posts', 'users.id', '=', 'posts.user_id')
