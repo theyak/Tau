@@ -1316,7 +1316,7 @@ class TauDbQuery
                 } else {
                     $cast->$field = $data;
                 }
-            } else if ($allProperties) {
+            } else if ($this->allProperties) {
                 $cast->$field = $data;
             }
         }
