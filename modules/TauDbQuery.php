@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This is an extremely simple SQL query builder. It can't do anything even
+ * This is a simple SQL query builder. It can't do anything even
  * moderately complex, mostly because I wrote this in a couple hours one evening
  * in which I was bored. What's even crazier is most of this functionality is
  * already built into TauDb, but it's a bit clunky. That being said, there are
@@ -193,6 +193,13 @@ class TauDbQuery
     public $allProperties = false;
 
     /**
+     * Fields to cast to a specific type
+     *
+     * @var array
+     */
+    public $castFields = [];
+
+    /**
      * Time to live for cache
      */
     public $ttl = 0;
@@ -300,6 +307,82 @@ class TauDbQuery
     }
 
     /**
+     * Cast one or more fields to a specific type. This is applied after
+     * fetch so use aliased names when available.
+     *
+     *   ->castField("int", "user_id", "login_count")
+     *   ->castField("DateTime", "created_at", "updated_at");
+     *
+     * @param  string $type Scalar type "int", "bool", or "float". May also be a class name
+     * @param  string[] ...$fields Fields to cast.
+     * @return $this
+     */
+    function castField($type, ...$fields) {
+        if (is_array($fields)) {
+            $fields = reset($fields);
+        }
+
+        if (!isset($this->castFields[$type])) {
+            $this->castFields[$type] = [];
+        }
+
+        $this->castFields[$type] = array_merge($this->castFields[$type], $fields);
+
+        return $this;
+    }
+
+    /**
+     * Cast one or more fields to an int. This is applied after
+     * fetch so use aliased names when available.
+     *
+     *   ->int("user_id", "login_count")
+     *
+     * @param  string[] ...$fields Fields to cast.
+     * @return $this
+     */
+    function int(...$fields) {
+        if (is_array($fields)) {
+            $fields = reset($fields);
+        }
+
+        return $this->castField("int", $fields);
+    }
+
+    /**
+     * Cast one or more fields to a float. This is applied after
+     * fetch so use aliased names when available.
+     *
+     *   ->float("movie_rating")
+     *
+     * @param  string[] ...$fields Fields to cast.
+     * @return $this
+     */
+    function float(...$fields) {
+        if (is_array($fields)) {
+            $fields = reset($fields);
+        }
+
+        return $this->castField("float", $fields);
+    }
+
+    /**
+     * Cast one or more fields to a boolean. This is applied after
+     * fetch so use aliased names when available.
+     *
+     *   ->bool("is_admin")
+     *
+     * @param  string[] ...$fields Fields to cast.
+     * @return $this
+     */
+    function bool(...$fields) {
+        if (is_array($fields)) {
+            $fields = reset($fields);
+        }
+
+        return $this->castField("bool", $fields);
+    }
+
+    /**
      * Time to live if cache is in use in TauDb object
      *
      * @param  int $ttl Time to live, in seconds
@@ -365,7 +448,7 @@ class TauDbQuery
      */
     public function update($data)
     {
-        $this->table->update($$data, $this->buildWhere($this->wheres));
+        $this->table->update($data, $this->buildWhere($this->wheres));
     }
 
     /**
@@ -1138,10 +1221,7 @@ class TauDbQuery
         $sql = $this->buildSelectQuery();
         $this->reset();
         $row = $this->db->fetchOneObject($sql, $this->ttl);
-
-        if ($this->cast) {
-            $row = $this->doCast($this->cast, $row, $this->allProperties);
-        }
+        $row = $this->doCast($row);
 
         return $row;
     }
@@ -1180,11 +1260,8 @@ class TauDbQuery
             $rows = $this->db->fetchAll($sql, $this->ttl);
         }
 
-        $rows = array_map(fn($row) => (object) $row, $rows);
-
-        if ($this->cast) {
-            $rows = array_map(fn($row) => $this->doCast($this->cast, $row, $this->allProperties), $rows);
-        }
+        $rows = array_map(fn ($row) => (object) $row, $rows);
+        $rows = array_map(fn ($row) => $this->doCast($row), $rows);
 
         return $rows;
     }
@@ -1279,49 +1356,79 @@ class TauDbQuery
      * @param  bool   Whether to copy all properties, regardless if they've been defined in class
      * @return object Casted object
      */
-    function doCast($dest, $source, $allProperties = false)
+    function doCast($source)
     {
-        $cast = new $dest;
-
-        $ref = new ReflectionClass($cast);
-
-        // Get source properties and type
-        $properties = [];
-        foreach ($ref->getProperties() as $property) {
-            $type = $property->getType();
-            if ($type) {
-                $type = $type->getName();
+        foreach ($this->castFields as $type => $fields) {
+            $lower = strtolower($type);
+            foreach ($fields as $field) {
+                if ($lower === "int") {
+                    $source->$field = (int)$source->$field;
+                } else if ($lower === "float") {
+                    $source->$field = (int)$source->$field;
+                } else if ($lower === "bool" || $lower === "boolean") {
+                    if ($source->$field === null) {
+                        $source->$field = false;
+                    } else {
+                        $value = strtolower($source->$field);
+                        if (in_array($value, ["off", "", "0", "no"])) {
+                            $source->$field = false;
+                        }
+                        $source->$field = true;
+                    }
+                } else if (class_exists($type)) {
+                    $source->$field = new $type($source->$field);
+                }
             }
-            if (!$type && preg_match('/@var\s+([^\s]+)/', $property->getDocComment(), $matches)) {
-                list(, $type) = $matches;
-            }
-            if (!$type && is_int($cast->{$property->name})) {
-                $type = 'int';
-            }
-            if (!$type && is_bool($cast->{$property->name})) {
-                $type = 'bool';
-            }
-            $properties[$property->name] = $type ?? 'string';
         }
 
-        foreach ($source as $field => $data) {
-            if (isset($properties[$field])) {
-                $type = $properties[$field];
-                if ($type === 'int') {
-                    $cast->$field = (int) $data;
-                } else if ($type === 'bool' || $type === 'boolean') {
-                    $cast->$field = (bool) $data;
-                } else if ($type === 'float') {
-                    $cast->$field = (float) $data;
-                } else {
+        if ($this->cast) {
+            $cast = new $this->cast;
+
+            $ref = new ReflectionClass($cast);
+
+            // Get source properties and type
+            $properties = [];
+
+            foreach ($ref->getProperties() as $property) {
+                $type = $property->getType();
+                if ($type) {
+                    $type = $type->getName();
+                }
+
+                if (!$type && preg_match('/@var\s+([^\s]+)/', $property->getDocComment(), $matches)) {
+                    list(, $type) = $matches;
+                }
+                if (!$type && is_int($cast->{$property->name})) {
+                    $type = 'int';
+                }
+                if (!$type && is_bool($cast->{$property->name})) {
+                    $type = 'bool';
+                }
+                $properties[$property->name] = $type ?? 'string';
+            }
+
+            foreach ($source as $field => $data) {
+                if (isset($properties[$field])) {
+                    $type = $properties[$field];
+
+                    if ($type === 'int') {
+                        $cast->$field = (int) $data;
+                    } else if ($type === 'bool' || $type === 'boolean') {
+                        $cast->$field = (bool) $data;
+                    } else if ($type === 'float') {
+                        $cast->$field = (float) $data;
+                    } else {
+                        $cast->$field = $data;
+                    }
+                } else if ($this->allProperties) {
                     $cast->$field = $data;
                 }
-            } else if ($this->allProperties) {
-                $cast->$field = $data;
             }
-        }
 
-        return $cast;
+            return $cast;
+        } else {
+            return $source;
+        }
     }
 
     /**
