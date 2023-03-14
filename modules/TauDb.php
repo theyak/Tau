@@ -721,24 +721,22 @@ class TauDb
 	 *
 	 * @param string $table
 	 * @param array $data
-	 * @return string
+	 * @return ?string
 	 */
 	public function insertSql($table, $data)
 	{
-		if (!is_array($data) || sizeof($data) < 1)
-		{
-			return;
+		if (!is_array($data) || sizeof($data) < 1) {
+			return null;
 		}
 
-		if (is_array(reset($data)))
-		{
+		if (is_array(reset($data))) {
 			return $this->insertMultiSql($table, $data);
 		}
 
 		$table = $this->tableName($table);
-		$fieldNames = $values = array();
-		foreach ($data AS $fieldName => $value)
-		{
+		$fieldNames = [];
+		$values = [];
+		foreach ($data AS $fieldName => $value) {
 			$fieldNames[] = $this->fieldName($fieldName);
 			$values[] = $this->escape($value);
 		}
@@ -1507,17 +1505,21 @@ class TauDb
 	/**
 	 * Insert data in to a table
 	 *
-	 * @param string $table Name of table to insert data into
-	 * @param array $values Values to insert into table
-	 * @param boolean $return If true, returns database created ID for row
+	 * @param string $table
+	 * @param array $data
+	 * @return string|int|null
 	 */
-	public function insert($table, $data, $return=false)
+	public function insert($table, $data, $return = false)
 	{
 		$sql = $this->insertSql($table, $data);
-		$this->query($sql);
-		if ($return) {
-			return $this->insertId();
+		if ($sql) {
+			$this->query($sql);
+			if ($return) {
+				return $this->insertId();
+			}
 		}
+
+		return null;
 	}
 
 
