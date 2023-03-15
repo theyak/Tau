@@ -295,17 +295,29 @@ class TauMysqli extends TauDb
 	/**
 	 * Retrieve all rows, each row as an object, from an SQL query
 	 *
-	 * @param mysqli_result $resultSet
-	 * @return array An array of records retrieved, each record as an object.
+	 * @param mysqli_result $result_set
+	 * @param string|bool Column to use as index, true to use first column.
+	 * @return stdClass[] An array of records retrieved, each record as an object.
 	 */
-	protected function dbFetchAllObject($resultSet)
+	protected function dbFetchAllObject($result_set, $id = null )
 	{
 		$rows = array();
-		while ($row = @mysqli_fetch_object($resultSet)) {
-			$rows[] = $row;
+		while ($row = @mysqli_fetch_object($result_set))
+		{
+			if ( $id === null || $id === false ) {
+				$rows[] = $row;
+			} else if ( $id === true ) {
+				$temp_row = (array)$row;
+				$rows[ reset( $temp_row ) ] = $row;
+			} else if ( property_exists( $row, $id ) ) {
+				$rows[ $row->{$id} ] = $row;
+			} else {
+				$rows[] = $row;
+			}
 		}
 		return $rows;
 	}
+
 
 
 
