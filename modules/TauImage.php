@@ -18,6 +18,7 @@ class TauImage
 	private $_height = 0;
 	private $_mimetype = '';
 	private $_image = null;
+	private $_type = null;
 
 	/**
 	 * Hash computed from averageHash() method.
@@ -70,10 +71,6 @@ class TauImage
 					$this->_image = imagecreatefromwbmp($filename);
 				break;
 
-				case 'image/webp':
-					$this->_image = imagecreatefromwebp($filename);
-				break;                    
-                    
 				default:
 					throw new TauImageException(TauImageException::INVALID_FILETYPE);
 			}
@@ -87,7 +84,7 @@ class TauImage
 				$this->_width = imagesx($this->_image);
 				$this->_height = imagesy($this->_image);
 				$this->_mimetype = self::getMimeTypeFromString($filename);
-				if (!in_array($this->_mimetype, array('image/jpeg', 'image/gif', 'image/png', 'image/x-windows-bmp', 'image/webp'))) {
+				if (!in_array($this->_mimetype, array('image/jpeg', 'image/gif', 'image/png', 'image/x-windows-bmp'))) {
 					throw new TauImageException(TauImageException::INVALID_FILETYPE);
 				}
 			}
@@ -102,8 +99,8 @@ class TauImage
 	 * Scale an image to a new size. Like resize, except this affects the current object
 	 * instead of returning a new TauImage.
 	 *
-	 * @param type $width
-	 * @param type $height
+	 * @param int $width
+	 * @param int $height
 	 */
 	public function setSize($width, $height)
 	{
@@ -118,10 +115,11 @@ class TauImage
 			$new_height = round($this->_height * (1 / $xscale));
 		}
 
-		$destination = imagecreatetruecolor($width, $height);
-		imagealphablending($destination, false);
-		imagesavealpha($destination, true);
-		imagecopyresampled($destination, $this->_image, 0, 0, 0, 0, $width, $height, $this->_width, $this->_height);
+
+		$destination = imagecreatetruecolor((int)$width, (int)$height);
+		imagealphablending( $destination, false );
+		imagesavealpha( $destination, true );
+		imagecopyresampled($destination, $this->_image, 0, 0, 0, 0, (int)$width, (int)$height, (int)$this->_width, (int)$this->_height);
 
 		$this->destroy();
 		$this->_image = $destination;
@@ -131,12 +129,12 @@ class TauImage
 
 	/**
 	 * Proportionally scales an image to a specified height
-	 * @param type $height The height to scale image to
+	 * @param int $height The height to scale image to
 	 */
 	public function setSizeWithHeight($height = 150)
 	{
 		$width = $height * $this->getWidth() / $this->getHeight();
-		$this->setSize($width, $height);
+		$this->setSize((int)$width, $height);
 	}
 
 	/**
@@ -152,8 +150,8 @@ class TauImage
 
 	/**
 	 * Scale an image to a new size
-	 * @param type $width
-	 * @param type $height
+	 * @param int $width
+	 * @param int $height
 	 * @return TauImage TauImage instance with resized image
 	 */
 	public function resize($width, $height)
@@ -162,11 +160,11 @@ class TauImage
 		$yscale = $this->_height / $height;
 
 		if ($yscale > $xscale) {
-			$new_width = round($this->_width * (1 / $yscale));
-			$new_height = round($this->height * (1 / $yscale));
+			$new_width = round((int)$this->_width * (1 / $yscale));
+			$new_height = round((int)$this->_height * (1 / $yscale));
 		} else {
-			$new_width = round($this->_width * (1 / $xscale));
-			$new_height = round($this->_height * (1 / $xscale));
+			$new_width = round((int)$this->_width * (1 / $xscale));
+			$new_height = round((int)$this->_height * (1 / $xscale));
 		}
 
 		$destination = imagecreatetruecolor($width, $height);
@@ -219,7 +217,7 @@ class TauImage
 	 * See http://stackoverflow.com/questions/14106984/how-to-calculate-discrete-cosine-transform-dct-in-php
 	 * for possible discrete cosine transform algorithms.
 	 *
-	 * @return type
+	 * @return string
 	 */
 	function averageHash($size = 8)
 	{
@@ -336,11 +334,11 @@ class TauImage
 		$basename = basename($file);
 
 		if ($this->_mimetype == 'image/gif') {
-			imagegif($this->getImageResource(), $basename);
+			imagegif($this->getImageResource(), $file);
 		} else if ($this->_mimetype == 'image/png') {
-			imagepng($this->getImageResource(), $basename);
+			imagepng($this->getImageResource(), $file);
 		} else {
-			imagejpeg($this->getImageResource(), $basename, 80);
+			imagejpeg($this->getImageResource(), $file, 80);
 		}
 	}
 
@@ -349,7 +347,7 @@ class TauImage
 	{
 		if (
 			!preg_match(
-				'/\A(?:(\xff\xd8\xff)|(GIF8[79]a)|(\x89PNG\x0d\x0a)|(BM)|(\x49\x49(?:\x2a\x00|\x00\x4a))|(FORM.{4}ILBM)|(RIFF....WEBPVP8))/',
+				'/\A(?:(\xff\xd8\xff)|(GIF8[79]a)|(\x89PNG\x0d\x0a)|(BM)|(\x49\x49(\x2a\x00|\x00\x4a))|(FORM.{4}ILBM))/',
 				$binary, $hits
 			)
 		) {
@@ -362,7 +360,6 @@ class TauImage
 			4 => 'image/x-windows-bmp',
 			5 => 'image/tiff',
 			6 => 'image/x-ilbm',
-            7 => 'image/webp',
 		);
 		return $type[count($hits) - 1];
 	}
@@ -371,7 +368,7 @@ class TauImage
 	{
 		if (
 			!preg_match(
-				'/\A(?:(\xff\xd8\xff)|(GIF8[79]a)|(\x89PNG\x0d\x0a)|(BM)|(\x49\x49(?:\x2a\x00|\x00\x4a))|(FORM.{4}ILBM)|(RIFF....WEBPVP8))/',
+				'/\A(?:(\xff\xd8\xff)|(GIF8[79]a)|(\x89PNG\x0d\x0a)|(BM)|(\x49\x49(\x2a\x00|\x00\x4a))|(FORM.{4}ILBM))/',
 				$binary, $hits
 			)
 		) {
@@ -383,8 +380,7 @@ class TauImage
 			3 => 'png',
 			4 => 'bmp',
 			5 => 'tiff',
-			6 => 'ilbm',
-            7 => 'webp',
+			6 => 'ilbm', // I really don't know on this one.
 		);
 		return $type[count($hits) - 1];
 	}
@@ -407,7 +403,7 @@ class TauImageException extends Exception
 	const INVALID_FILE = -1;
 	const INVALID_FILETYPE = -2;
 
-	function __constuct($code)
+	function __construct($code)
 	{
 		parent::__construct("", $code);
 	}
