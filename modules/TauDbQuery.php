@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This is a simple SQL query builder. It can't do anything even
+ * This is an extremely simple SQL query builder. It can't do anything even
  * moderately complex, mostly because I wrote this in a couple hours one evening
  * in which I was bored. What's even crazier is most of this functionality is
  * already built into TauDb, but it's a bit clunky. That being said, there are
@@ -326,7 +326,13 @@ class TauDbQuery
             $this->castFields[$type] = [];
         }
 
-        $this->castFields[$type] = array_merge($this->castFields[$type], $fields);
+        if (!is_array($fields)) {
+            $fields = array($fields);
+        }
+
+        foreach ($fields as $field) {
+            $this->castFields[$type][] = $field;
+        }
 
         return $this;
     }
@@ -1191,7 +1197,17 @@ class TauDbQuery
     {
         $sql = $this->buildSelectQuery();
         $this->reset();
-        return $this->db->fetchColumn($sql, $this->ttl);
+        $column = $this->db->fetchColumn($sql, $this->ttl);
+
+        if (isset($this->castFields["int"])) {
+            $column = array_map(fn ($c) => intval($c), $column);
+        } else if (isset($this->castFields["float"])) {
+            $column = array_map(fn ($c) => floatval($c), $column);
+        } else if (isset($this->castFields["bool"])) {
+            $column = array_map(fn ($c) => !!$c, $column);
+        }
+
+        return $column;
     }
 
     /**
@@ -1351,7 +1367,7 @@ class TauDbQuery
      *     public string $username;
      * }
      *
-     * @param  string Class name for destination class
+     * @param  object Class name for destination class
      * @param  object Source class to cast from
      * @param  bool   Whether to copy all properties, regardless if they've been defined in class
      * @return object Casted object
@@ -1360,6 +1376,7 @@ class TauDbQuery
     {
         foreach ($this->castFields as $type => $fields) {
             $lower = strtolower($type);
+
             foreach ($fields as $field) {
                 if ($lower === "int") {
                     $source->$field = (int)$source->$field;
