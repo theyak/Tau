@@ -155,9 +155,9 @@ class Tau
 	/**
 	 * Dump the contents of a variable to the display
 	 *
-	 * @param type $message
-	 * @param type $line
-	 * @param type $file
+	 * @param mixed $message
+	 * @param int $line
+	 * @param string $file
 	 */
 	public static function dump($message, $line='', $file='')
 	{
