@@ -136,9 +136,15 @@
  * fetchColumn($sql, $expires = 0)
  *   Fetch a column from a database SELECT query
  *
+ * fetchInts($sql, $expires = 0)
+ *   Fetch an integer column from a database SELECT query
+ *
  * fetchValue($sql, $expires = 0)
  *   Fetch a single value from the database. Very useful for things like
  *   SELECT COUNT(*) FROM ... WHERE ...
+ *
+ * fetchInt($sql, $expires = 0)
+ *   Fetch a single integer value from the database.
  *
  * insert($table, $data)
  *   Insert data in to a table
@@ -1480,8 +1486,20 @@ class TauDb
 	}
 
 
-
 	/**
+	 * Fetch a column of integers from a database SELECT query
+	 *
+	 * @param string $sql
+	 * @param int $expires Time, in seconds, to keep data in cache
+	 * @return array<int>
+	 */
+	public function fetchInts($sql = null, $expires = 0) {
+		$results = $this->fetchColumn($sql, $expires);
+		return array_map(fn ($v) => (int)$v, $results);
+	}
+
+
+    /**
 	 * Fetch a single value from the database. Very useful for things like
 	 * SELECT COUNT(*) FROM ... WHERE ...
 	 *
@@ -1500,7 +1518,21 @@ class TauDb
 		return false;
 	}
 
+    
+	/**
+	 * Fetch a single integer from the database. Very useful for things like
+	 * SELECT COUNT(*) FROM ... WHERE ...
+	 *
+	 * @param string $sql
+	 * @param int $expires Time, in seconds, to keep data in cache
+	 * @return mixed
+	 */
+	public function fetchInt($sql = null, $expires = 0) {
+		$value = $this->fetchValue($sql, $expires);
+		return (int)$value;
+	}
 
+    
 
 	/**
 	 * Insert data in to a table
