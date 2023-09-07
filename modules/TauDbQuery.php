@@ -590,6 +590,60 @@ class TauDbQuery
     }
 
     /**
+     * Set field or fields to select as an interger
+     *
+     * @param array|string|TauSqlExpression|TauDbQuery_Column ...$fields
+     * @return $this
+     */
+    public function selectInt(...$fields) {
+        $columns = $this->selectFunction(null, $fields);
+        foreach ($columns as $column) {
+            if ($column->alias) {
+                $this->castField("int", [$column->alias]);
+            } else {
+                $this->castField("int", [$column->name]);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Set field or fields to select as a float
+     *
+     * @param array|string|TauSqlExpression|TauDbQuery_Column ...$fields
+     * @return $this
+     */
+    public function selectFloat(...$fields) {
+        $columns = $this->selectFunction(null, $fields);
+        foreach ($columns as $column) {
+            if ($column->alias) {
+                $this->castField("float", [$column->alias]);
+            } else {
+                $this->castField("float", [$column->name]);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Set field or fields to select as a boolean
+     *
+     * @param array|string|TauSqlExpression|TauDbQuery_Column ...$fields
+     * @return $this
+     */
+    public function selectBool(...$fields) {
+        $columns = $this->selectFunction(null, $fields);
+        foreach ($columns as $column) {
+            if ($column->alias) {
+                $this->castField("bool", [$column->alias]);
+            } else {
+                $this->castField("bool", [$column->name]);
+            }
+        }
+        return $this;
+    }    
+
+    /**
      * Performs a SUM operation on the specified column or array of columns
      *
      * @param  array|string|TauSqlExpression|TauDbQuery_Column $fields
