@@ -56,7 +56,7 @@ class TauMysqli extends TauDb
 				$this->server->port
 			);
 
-			if ($this->server->terminate_on_error) {
+			if ($this->terminateOnError) {
 				if (!$this->server->connection) {
 					if ($this->server->host === '127.0.0.1' || $this->server->host === 'localhost') {
 						$message = array(
