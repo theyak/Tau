@@ -1271,7 +1271,18 @@ class TauDb
 		return $row;
 	}
 
-
+	/**
+	 * Alias for fetchOneObject
+	 *
+	 * @param string $sql
+	 * @param array $opts
+	 *   - ttl: Time, in seconds, to keep data in cache
+	 * @return object|false
+	 */
+	public function getFirst($sql, $opts = []) {
+		$expires = $opts['ttl'] ?? 0;
+		return $this->fetchOneObject($sql, $expires);
+	}
 
 	/**
 	 * Retrieve exactly one rexcord, as an object, from an SQL SELECT statement
@@ -1308,8 +1319,25 @@ class TauDb
 		return $row;
 	}
 
+	/**
+	 * Alias for fetchAllObject
+	 *
+	 * @param string $sql
+	 * @param array $opts
+	 *   - ttl: Time, in seconds, to keep data in cache
+	 *   - id: Name of field to use as ID. If left blank, the first field is used
+	 * @return object[]
+	 */
+	public function getRows($sql, $opts = []) {
+		$expires = $opts['ttl'] ?? 0;
+		$use_id = $opts['id'] ?? false;
 
-
+		if ($use_id) {
+			return $this->fetchAllObjectWithId($sql, $use_id, $expires);
+		} else {
+			return $this->fetchAllObject($sql, $expires);
+		}
+	}
 
 	/**
 	 * Retrieve all rows, each row as an object, from an SQL query
