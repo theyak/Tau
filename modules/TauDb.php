@@ -300,6 +300,11 @@ class TauDb
 	 */
 	private $events = array();
 
+    /**
+	 * Last SQL query
+	 * @var string
+	 */
+	private $last_sql = "";
 
 
 	/**
@@ -1056,6 +1061,8 @@ class TauDb
 			$sql = $this->sql();
 		}
 
+        $this->last_sql = $sql;
+
 		if ( isset( $this->events[ 'query' ] ) )
 		{
 			foreach ( $this->events[ 'query' ] AS $callable )
@@ -1128,7 +1135,9 @@ class TauDb
 	 */
 	public function query($sql, $expires = 0)
 	{
-		// Cache calls MUST be select queries
+        $this->last_sql = $sql;
+
+        // Cache calls MUST be select queries
 		if ($expires && strtolower(substr(trim($sql), 0, 6)) == 'select')
 		{
 			return $this->select($sql, $expires);
