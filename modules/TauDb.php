@@ -1020,6 +1020,42 @@ class TauDb
 	}
 
 
+	/**
+	 * Prepares an SQL query by escaping parameters in the query.
+	 *
+	 * The query can take two forms, both of which are standard in most SQL libraries.
+	 *
+	 * 1. The query can be a string with ? placeholders. In this case, the $data parameter
+	 *    should be an array of values to replace the ? placeholders in the query.
+	 * 2. The query can be a string with :name placeholders. In this case, the $data parameter
+	 *    should be an associative array with keys matching the :name placeholders in the query.
+	 *
+	 * @param string $sql The SQL query
+	 * @param array $data The data to replace placeholders in the query with. If the array
+	 *   is an associative array, it is assumed that the query uses :name placeholders. If
+	 *   the array is a list, it is assumed that the query uses ? placeholders.
+	 * @return string The prepared SQL query
+	 */
+	public function prepare($sql, $data)
+	{
+		$data = (array)$data;
+
+		if (array_is_list($data)) {
+			foreach ($data as $value) {
+				$sql = preg_replace('/\\?/', $this->escape($value), $sql, 1);
+			}
+		} else {
+			foreach ($data as $key => $value) {
+				if (!str_starts_with($key, ':')) {
+					$key = ':' . $key;
+				}
+				$sql = str_replace($key, $this->escape($value), $sql);
+			}
+		}
+
+		return $sql;
+	}
+
 
     /**
      * Allow for raw SQL which has no munging.
