@@ -1026,9 +1026,21 @@ class TauDb
 	 * The query can take two forms, both of which are standard in most SQL libraries.
 	 *
 	 * 1. The query can be a string with ? placeholders. In this case, the $data parameter
-	 *    should be an array of values to replace the ? placeholders in the query.
-	 * 2. The query can be a string with :name placeholders. In this case, the $data parameter
-	 *    should be an associative array with keys matching the :name placeholders in the query.
+	 *    should be an array of values to replace the ? placeholders in the query. You
+	 *    can use ?? to indicate a field or table name instead of a value.
+	 *    Example:
+	 *    $data = ['name', 'users', 'username', 'Bob'];
+	 *    echo $db->prepare("SELECT ?? FROM ?? WHERE ?? = ?");
+	 *    >>> SELECT `name` FROM `users` WHERE `username` = 'Bob'
+	 *
+	 * 2. The query can be a string with ::name and :name placeholders. In this case, the $data
+	 *    parameter should be an associative array with keys matching the :name placeholders in
+	 *    the query. Prefixing with "::" indicates a field or table name while prefixing with ":"
+	 *    indicates a value.
+	 *    Example:
+	 *    $data = ['field' => 'name', 'table' => 'users', 'username' => 'username', 'name' => 'Bob'];
+	 *    echo $db->prepare("SELECT ::field FROM ::table WHERE ::username = :name");
+	 *    >>> SELECT `name` FROM `users` WHERE `username` = 'Bob'
 	 *
 	 * @param string $sql The SQL query
 	 * @param array $data The data to replace placeholders in the query with. If the array
@@ -1042,14 +1054,21 @@ class TauDb
 
 		if (array_is_list($data)) {
 			foreach ($data as $value) {
-				$sql = preg_replace('/\\?/', $this->escape($value), $sql, 1);
+				$sql = preg_replace_callback(
+					'/\\?\\?|\\?/',
+					fn($match) => $match[0] === "??" ? $this->fieldName($value) : $this->escape($value),
+					$sql,
+					1
+				);
 			}
 		} else {
 			foreach ($data as $key => $value) {
-				if (!str_starts_with($key, ':')) {
-					$key = ':' . $key;
+				$count = 0;
+				$key = trim($key, ':');
+				$sql = str_replace("::$key", $this->fieldName($value), $sql, $count);
+				if ($count <= 0) {
+					$sql = str_replace(":$key", $this->escape($value), $sql);
 				}
-				$sql = str_replace($key, $this->escape($value), $sql);
 			}
 		}
 
