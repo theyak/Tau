@@ -1316,7 +1316,7 @@ class TauDb
 		}
 		else if (is_string($sql))
 		{
-			if (stripos('limit', substr($sql, -12)) === false)
+			if (stripos(substr($sql, -12), 'limit') === false)
 			{
 				$resultSet = $this->select($sql . ' LIMIT 1', $expires);
 			}
@@ -1364,7 +1364,7 @@ class TauDb
 		}
 		else if (is_string($sql))
 		{
-			if (stripos('limit', substr($sql, -12)) === false)
+			if (stripos(substr($sql, -12), 'limit') === false)
 			{
 				$resultSet = $this->select($sql . ' LIMIT 1', $expires);
 			}
