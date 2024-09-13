@@ -55,7 +55,7 @@ class TauValidate
 		}
 
 		// The following checks could be done as part of the regex, but then the
-		// regex gets really complilcated and unmaintable, so we use regular
+		// regex gets really complilcated and unmaintainable, so we use regular
 		// code logic to do some extra checks.
 
 		$parts = explode('@', $email);
