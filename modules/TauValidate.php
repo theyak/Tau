@@ -36,18 +36,48 @@ class TauValidate
 	}
 
 
-	public static function is_email($data, $strict = false)
+	/**
+	 * Check if email is valid.
+	 *
+	 * @param string $email Email address
+	 * @param bool $strict No longer used. Kept for compatability.
+	 * @return bool
+	 */
+    public static function is_email($data, $strict = false)
 	{
-		if ( is_object( $data ) ) return false;
-		if ( is_array( $data ) ) return false;
-
-		$regex = $strict
-			? '/^([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,8})$/i'
-			: '/^([*+!.&#$¦\'\\%\/0-9a-z^_`{}=?~:-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,8})$/i';
-		if (preg_match($regex, trim($data), $matches)) {
-			return true;
+		if (!is_string($email)) {
+			return false;
 		}
-		return false;
+
+		$match = preg_match("/^[A-Z0-9._%+\-]+@([A-Z0-9\-]+\.)+[A-Z]{2,}$/i", $email);
+		if (!$match) {
+			return false;
+		}
+
+		// The following checks could be done as part of the regex, but then the
+		// regex gets really complilcated and unmaintable, so we use regular
+		// code logic to do some extra checks.
+
+		$parts = explode('@', $email);
+		$localpart = $parts[0];
+		$domain = $parts[1];
+
+		// Check that local part does not start or end in a period
+		if (trim($localpart, ".") !== $localpart) {
+			return false;
+		}
+
+		// Check that domain starts with a letter or number
+		if (!ctype_alnum(substr($domain, 0, 1))) {
+			return false;
+		}
+
+		// Check that local part is not too long
+		if (strlen($localpart) > 64) {
+			return false;
+		}
+
+		return true;
 	}
 	
 	public static function is_integer($value, $positiveOnly = false)
