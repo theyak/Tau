@@ -80,7 +80,7 @@ class TauMysqli extends TauDb
 
 			if (!$this->server->connection)
 			{
-				if ( $retries < 2 ) {
+				if ($retries < 2) {
 					sleep(1);
 					$this->connect(++ $retries);
 					return;
