@@ -32,53 +32,65 @@ class TauMysqli extends TauDb
 	private $query = '';
 
 
-	function __construct($server)
+	public function __construct($server)
 	{
 		$this->server = $server;
 
-		if (empty($server->host)) {
+		if (empty($server->host))
+		{
 			$this->server->host = '127.0.0.1';
 		}
 
-		if (empty($server->port)) {
+		if (empty($server->port))
+		{
 			$this->server->port = 3306;
 		}
 	}
 
-	function connect()
+	public function connect($retries = 0)
 	{
-		if (!$this->server->connection) {
-			$this->server->connection = mysqli_connect(
-				$this->server->host,
-				$this->server->username,
-				$this->server->password,
-				$this->server->database,
-				$this->server->port
-			);
+		if (!$this->server->connection)
+		{
+			try {
+				$this->server->connection = @mysqli_connect(
+					$this->server->host,
+					$this->server->username,
+					$this->server->password,
+					$this->server->database,
+					$this->server->port
+				);
+			} catch (Exception $ex) {
+				$message = $ex->getMessage();
 
-			if ($this->terminateOnError) {
-				if (!$this->server->connection) {
-					if ($this->server->host === '127.0.0.1' || $this->server->host === 'localhost') {
-						$message = array(
-							'Unable to connect to database. The database server is either down ',
-							'or an invalid username and password combination was supplied.<br><br>',
-							'You will need to grant access to the database for user ' . $this->server->username,
-							' with something like:<br><br>',
-							'&nbsp;&nbsp;&nbsp;&nbsp;GRANT ALL ON ' . $this->server->database .
-							'.* TO ' . $this->server->username,
-							'@\'%\' IDENTIFIED BY \'PASSWORD\'',
-							'<br><br>Please see <a href="http://www.cyberciti.biz/tips/',
-							'how-do-i-enable-remote-access-to-mysql-database-server.html">',
-							'How Do I Enable Remote Access To MySQL Database Server?</a> ',
-							'for more information.',
-						);
-						TauError::fatal(implode('', $message));
-					} else {
-						TauError::fatal('Unable to connect to database.');
-					}
-				} else {
-					mysqli_set_charset($this->server->connection, "utf8");
+				// Access denied means invalid credentials.
+				// It doesn't matter how many times you retry, it will
+				// contine to fail, so just terminste right away.
+				if (str_contains($message, "Access denied"))
+				{
+					TauError::fatal("Unable to connect to database.");
 				}
+
+				if ($retries < 2)
+				{
+					sleep(1);
+					$this->connect(++ $retries);
+					return;
+				}
+			}
+
+			if (!$this->server->connection)
+			{
+				if ( $retries < 2 ) {
+					sleep(1);
+					$this->connect(++ $retries);
+					return;
+				}
+
+				TauError::fatal("Unable to connect to database.");
+			}
+			else
+			{
+				mysqli_set_charset($this->server->connection, "utf8mb4");
 			}
 		}
 
