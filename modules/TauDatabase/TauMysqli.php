@@ -64,7 +64,7 @@ class TauMysqli extends TauDb
 
 				// Access denied means invalid credentials.
 				// It doesn't matter how many times you retry, it will
-				// contine to fail, so just terminste right away.
+				// continue to fail, so just terminate right away.
 				if (str_contains($message, "Access denied"))
 				{
 					TauError::fatal("Unable to connect to database.");
