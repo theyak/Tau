@@ -18,6 +18,14 @@ class TauError
 {
 	public static function fatal($message, $extended = false)
 	{
+		if (php_sapi_name() === "cli") {
+			echo $message . "\n";
+			exit(1);
+		}
+
+		header('HTTP/1.1 503 Service Temporarily Unavailable');
+		header('Status: 503 Service Temporarily Unavailable');
+
 		echo '<html style="background-color:#a77">';
 		echo '<head>';
 		echo '<title>Error</title>';
@@ -32,8 +40,9 @@ class TauError
 		echo '</div>';
 		echo '</body>';
 		echo '</html>';
-		exit;
+		exit(1);
 	}
+
 
 	public static function debug_backtrace()
 	{
@@ -52,4 +61,5 @@ class TauError
 
 		return $msg;
 	}
+
 }
