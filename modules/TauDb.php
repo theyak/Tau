@@ -44,6 +44,8 @@
  *
  *   1.1.10 Oct 12, 2018  Add raw(), in(), and notIn()
  *
+ *   1.1.11 Jul 16, 2026  Add support for nested transactions. Probably only works with MySQL and its variants.
+ *
  * ::init($engine, TauDbServer $server)
  *   Initialize a database connection
  *
@@ -305,6 +307,12 @@ class TauDb
 	 * @var string
 	 */
 	private $last_sql = "";
+
+	/**
+	 * Depth of nested transactions
+	 * @var int
+	 */
+	public $transaction_depth = 0;
 
 
 	/**
@@ -2043,6 +2051,45 @@ class TauDb
 		$integer -= 1389744000;
 		return $integer + $fractional;
 	}
+
+	/**
+	 * Start a transaction
+	 */
+	public function startTransaction() {
+		if ($this->transaction_depth <= 0) {
+			$this->query('START TRANSACTION');
+		} else {
+			$this->query('SAVEPOINT LEVEL_' . $this->transaction_depth);
+		}
+
+		$this->transaction_depth++;
+	}
+
+	/**
+	 * Commit a transaction
+	 */
+	public function commitTransaction() {
+		$this->transaction_depth--;
+
+		if ($this->transaction_depth <= 0) {
+			$this->query('COMMIT');
+		} else {
+			$this->query('RELEASE SAVEPOINT LEVEL_' . $this->transaction_depth);
+		}
+	}
+
+	/**
+	 * Rollback a transaction
+	 */
+	public function rollbackTransaction() {
+		$this->transaction_depth--;
+
+		if ($this->transaction_depth <= 0) {
+			$this->query('ROLLBACK');
+		} else {
+			$this->query('ROLLBACK TO SAVEPOINT LEVEL_' . $this->transaction_depth);
+		}
+	}    
 }
 
 
